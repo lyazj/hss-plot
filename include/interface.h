@@ -1,10 +1,7 @@
 #pragma once
 
-// Inner abstract classes.
 class IEvent;
 class IFlow;
-class ILoader;
-class IPlotter;
 
 // Abstract event adapter.
 // Subclass it to add data members.
@@ -12,7 +9,9 @@ class IEvent {
 public:
   virtual ~IEvent() = default;
   virtual bool next() { return false; }
-  virtual bool plot() { return false; }
+  virtual bool cut() { return true; }
+  virtual bool plot() const { return false; }
+  virtual bool save() const { return false; }
 };
 
 // Abstract linear control flow.
@@ -20,26 +19,14 @@ public:
 class IFlow {
 public:
   IFlow(IEvent *event, IFlow *next = nullptr) : event_(event), next_(next) { }
-  virtual ~IFlow() = default;
+  IFlow(IFlow *prev) : IFlow(prev->event_) { delete prev->next_; prev->next_ = this; }
+  virtual ~IFlow() { delete next_; }
 
   virtual bool execute_current_node() const = 0;
   bool execute() const { return execute_current_node() && (!next_ || next_->execute()); }
+  void loop() const { while(event_->next()) execute(); }
 
 protected:
-  IEvent *event_;
-  IFlow *next_;
-};
-
-// Event loading executor.
-class ILoader : public IFlow {
-public:
-  using IFlow::IFlow;
-  virtual bool execute_current_node() const override { return event_->next(); }
-};
-
-// Event visualization executor.
-class IPlotter : public IFlow {
-public:
-  using IFlow::IFlow;
-  virtual bool execute_current_node() const override { return event_->plot(); }
+  IEvent *event_;  // not owned
+  IFlow *next_;  // owned
 };
