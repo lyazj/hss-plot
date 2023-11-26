@@ -4,6 +4,7 @@
 #include "../include/fs.h"
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <tuple>
@@ -31,6 +32,7 @@ public:
     set_boundary(lb, ub);
     bin();
     set_logy(true);
+    set_legend_pos(0.3, 0.3, 0.15, 0.15);
   }
 
   ~Tree2Hist() { optimize(); }
@@ -49,7 +51,7 @@ public:
     // Compute Hss significance relevant to QCD.
     if(Hss < 0 || QCD < 0) return false;
     double HssVSQCD = QCD / Hss;
-    if(isnan(HssVSQCD)) return false;
+    if(std::isnan(HssVSQCD)) return false;
     HssVSQCD = 1.0 / (1.0 + HssVSQCD);
 
     // Submit result.
@@ -91,9 +93,11 @@ private:
       else b_total += integrals[i][nbin];
     }
 
+    double sf = 1e6 / 7395487;  // [XXX] Scale to 10^6 events (100/fb).
+
     vector<tuple<double, double, double, double>> significance;
     significance.reserve(nbin - 1);
-    for(size_t left_last_bin = 1; left_last_bin < nbin; ++left_last_bin) {
+    for(size_t left_last_bin = 0; left_last_bin < nbin; ++left_last_bin) {
       double s_left, b_left = 0.0;
       for(size_t i = 0; i < 4; ++i) {
         if(i == 2) s_left = integrals[i][left_last_bin];
@@ -101,19 +105,21 @@ private:
       }
       double s_right = s_total - s_left;
       double b_right = b_total - b_left;
-      double sig = get_signal_significance(s_right, b_right);
+      double sig = get_signal_significance(s_right, b_right, sf);
       if(!isfinite(sig)) sig = 0.0;
       significance.emplace_back(sig, get_curve(0)->GetBinLowEdge(left_last_bin + 1), s_right, b_right);
-      sort(significance.begin(), significance.end());
-      cout << "sig.\tpos.\tsg.\tbg." << endl;
-      for(const auto &rec : significance) {
-        cout << get<0>(rec) << '\t' << get<1>(rec) << '\t' << get<2>(rec) << '\t' << get<3>(rec) << endl;
-      }
+    }
+    sort(significance.begin(), significance.end());
+    reverse(significance.begin(), significance.end());
+    cout << "sig.\tpos.\tsg.\tbg." << endl << fixed << setprecision(3);
+    for(const auto &rec : significance) {
+      cout << get<0>(rec) << '\t' << get<1>(rec) << '\t' << get<2>(rec) << '\t' << get<3>(rec) << endl;
     }
   }
 
-  static double get_signal_significance(double s, double b) {
-    return sqrt(2 * s * ((s + b) * log(1 + s / b) - 1));
+  static double get_signal_significance(double s, double b, double sf) {
+    s *= sf, b *= sf;
+    return sqrt(2 * ((s + b) * log(1 + s / b) - s));
   }
 };
 

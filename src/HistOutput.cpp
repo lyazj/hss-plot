@@ -54,7 +54,7 @@ public:
     // iPos=22 : center, centered
     // mode generally :
     //   iPos = 10*(alignement 1/2/3) + position (1/2/3 = left/center/right)
-    int iPos = 11;
+    int iPos = 1;
     CMS_lumi(canvas.get(), iPeriod, iPos);
   }
 };
@@ -157,6 +157,7 @@ void HistOutput::bin()
   double lb, ub;
   get_boundary(lb, ub);
   set_boundary(lb, ub);
+  detail_->curves.reserve(get_ncurve());
   for(size_t i = 0; i < get_ncurve(); ++i) {
     TH1F *curve = new TH1F("", get_curve_title(i), get_nbin(), lb, ub);
     if(xtitle_) curve->SetXTitle(xtitle_);
@@ -165,7 +166,7 @@ void HistOutput::bin()
       curve->Fill(vw.first, vw.second);
     }
     detail_->data[i] = { };
-    detail_->curves[i].reset(curve);
+    detail_->curves.emplace_back(curve);
   }
 }
 
