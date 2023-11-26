@@ -2,11 +2,11 @@
 #include "interface.h"
 #include <stddef.h>
 
-// Event in TTree from TFile.
-class TreeEvent : virtual public IEvent {
+// Use TTree from multiple TFiles as IEvent source.
+class TreeInput : virtual public IEvent {
 public:
-  TreeEvent(const char *name);
-  ~TreeEvent();
+  TreeInput(const char *name);
+  ~TreeInput();
   const char *get_name() const { return name_; }
 
   // Current position.

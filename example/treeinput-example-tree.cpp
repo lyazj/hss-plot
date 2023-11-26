@@ -1,11 +1,11 @@
-#include "../include/TreeEvent.h"
+#include "../include/TreeInput.h"
 #include <iostream>
 
 using namespace std;
 
 int main()
 {
-  TreeEvent event("Events");
+  TreeInput event("Inputs");
   event.add_filename("../example/wzdd-tree.root");
   event.add_filename("../example/wzdd-tree.root");
   size_t b_phi = event.add_branch("ak15_phi");

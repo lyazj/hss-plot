@@ -1,13 +1,13 @@
-#include "../include/TreeEvent.h"
+#include "../include/TreeInput.h"
 #include <iostream>
 
 using namespace std;
 
 int main()
 {
-  TreeEvent event("Events");
+  TreeInput event("Inputs");
   event.add_filename("../example/wzdd-nano.root");
-  event.add_filename("../example/wzdd-nano.root");
+  event.add_filename("../example/wzdd-tree.root");
   size_t b_pdgid = event.add_branch("GenPart_pdgId");
   while(event.next()) {
     size_t ngenpar;

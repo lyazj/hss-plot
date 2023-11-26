@@ -1,4 +1,4 @@
-#include "../include/TreeEvent.h"
+#include "../include/TreeInput.h"
 #include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
@@ -17,7 +17,7 @@
 
 using namespace std;
 
-class TreeEvent::Detail {
+class TreeInput::Detail {
 public:
   vector<string> filenames;
   size_t ifilename;  // index into filenames
@@ -44,7 +44,7 @@ public:
   }
 };
 
-TreeEvent::TreeEvent(const char *name)
+TreeInput::TreeInput(const char *name)
   : name_(name)
 {
   detail_ = new Detail;
@@ -53,66 +53,66 @@ TreeEvent::TreeEvent(const char *name)
   detail_->global_index = -1;
 }
 
-TreeEvent::~TreeEvent()
+TreeInput::~TreeInput()
 {
   delete detail_;
 }
 
-const char *TreeEvent::get_filename() const
+const char *TreeInput::get_filename() const
 {
   return get_filename(get_ifilename());
 }
 
-size_t TreeEvent::get_ifilename() const
+size_t TreeInput::get_ifilename() const
 {
   return detail_->ifilename;
 }
 
-size_t TreeEvent::get_local_index() const
+size_t TreeInput::get_local_index() const
 {
   return detail_->local_index;
 }
 
-size_t TreeEvent::get_global_index() const
+size_t TreeInput::get_global_index() const
 {
   return detail_->global_index;
 }
 
-size_t TreeEvent::add_filename(const char *filename)
+size_t TreeInput::add_filename(const char *filename)
 {
   size_t i = detail_->filenames.size();
   detail_->filenames.push_back(filename);
   return i;
 }
 
-size_t TreeEvent::get_nfilename() const
+size_t TreeInput::get_nfilename() const
 {
   return detail_->filenames.size();
 }
 
-const char *TreeEvent::get_filename(size_t i) const
+const char *TreeInput::get_filename(size_t i) const
 {
   return i >= get_nfilename() ? nullptr : detail_->filenames[i].c_str();
 }
 
-size_t TreeEvent::add_branch(const char *filename)
+size_t TreeInput::add_branch(const char *filename)
 {
   size_t i = detail_->branch_names.size();
   detail_->branch_names.push_back(filename);
   return i;
 }
 
-size_t TreeEvent::get_nbranch() const
+size_t TreeInput::get_nbranch() const
 {
   return detail_->branch_names.size();
 }
 
-const char *TreeEvent::get_branch(size_t i) const
+const char *TreeInput::get_branch(size_t i) const
 {
   return i >= get_nbranch() ? nullptr : detail_->branch_names[i].c_str();
 }
 
-void *TreeEvent::get_branch_data(size_t i, size_t *nelem) const
+void *TreeInput::get_branch_data(size_t i, size_t *nelem) const
 {
   if(i >= detail_->branch_data.size()) return nullptr;
   if(nelem) *nelem = detail_->branch_current_size[i] / detail_->branch_elem_size[i];
@@ -127,7 +127,7 @@ static size_t get_branch_elem_size_impl(TBranch *branch)
   return TDataType::GetDataType(e)->Size();
 }
 
-size_t TreeEvent::get_branch_elem_size(size_t i) const
+size_t TreeInput::get_branch_elem_size(size_t i) const
 {
   if(i >= detail_->branch_elem_size.size()) return 0;
   return detail_->branch_elem_size[i];
@@ -144,13 +144,13 @@ static size_t get_branch_nelem_max_impl(TBranch *branch)
   return max(count, (Int_t)0);
 }
 
-size_t TreeEvent::get_branch_nelem_max(size_t i) const
+size_t TreeInput::get_branch_nelem_max(size_t i) const
 {
   if(i >= detail_->branch_nelem_max.size()) return 0;
   return detail_->branch_nelem_max[i];
 }
 
-bool TreeEvent::next()
+bool TreeInput::next()
 {
   // The most frequent case: step forward.
   if(detail_->tree) {
