@@ -116,7 +116,7 @@ bool HistOutput::get_boundary(size_t i, double &lb, double &ub) const
 {
   if(i >= detail_->curve_boundaries.size()) return false;
   auto boundary = detail_->curve_boundaries[i].get();
-  if(boundary) lb = boundary->first, ub = boundary->second;
+  if(boundary) { lb = boundary->first, ub = boundary->second; return true; }
   lb = 0.0, ub = 1.0;
   double min_value = detail_->data_minmax[i].first;
   double max_value = detail_->data_minmax[i].second;
