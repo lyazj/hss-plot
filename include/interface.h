@@ -10,8 +10,7 @@ public:
   virtual ~IEvent() = default;
   virtual bool next() { return false; }
   virtual bool cut() { return true; }
-  virtual bool plot() const { return false; }
-  virtual bool save() const { return false; }
+  virtual bool process() const { return true; }
 };
 
 // Abstract linear control flow.

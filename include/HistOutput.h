@@ -5,16 +5,17 @@
 // Use saved TCanvas to filename as IEvent destination.
 class HistOutput : virtual public IEvent {
 public:
-  HistOutput(const char *title = nullptr, const char *filename = nullptr);
+  HistOutput(const char *title, const char *filename);
   ~HistOutput();
   const char *get_title() const { return title_; }
   const char *get_filename() const { return filename_; }
 
   // Curves in the same plot.
-  size_t add_curve(const char *name);
+  size_t add_curve(const char *title);
   size_t get_ncurve() const;
+  const char *get_curve_title(size_t) const;
   bool fill_curve(size_t, double value, double weight = 1.0) const;
-  virtual bool plot() const override = 0;
+  virtual bool process() const override = 0;
 
   // Boundary and binning control.
   bool get_boundary(size_t, double &, double &) const;
@@ -24,8 +25,8 @@ public:
   bool is_binned(size_t, bool &) const;
   bool bin(size_t);
 
-  // File destination.
-  virtual bool save() const override;
+  // Draw and save histograms.
+  bool save() const;
 
 protected:
   const char *title_;

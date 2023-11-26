@@ -12,30 +12,45 @@ class HistOutput::Detail {
 public:
   vector<vector<pair<double, double>>> data;
   vector<unique_ptr<TH1>> curves;
-  vector<const char *> curve_names;
+  vector<const char *> curve_titles;
   vector<unique_ptr<pair<double, double>>> curve_boundaries;
   vector<size_t> curve_nbins;
+  unique_ptr<TCanvas> canvas;
 };
 
 HistOutput::HistOutput(const char *title, const char *filename)
   : title_(title), filename_(filename)
 {
   detail_ = new Detail;
+  detail_->canvas.reset(new TCanvas);
 }
 
 HistOutput::~HistOutput()
 {
+  save();
   delete detail_;
 }
 
-size_t HistOutput::add_curve(const char *name)
+size_t HistOutput::add_curve(const char *title)
 {
   size_t i = detail_->data.size();
   detail_->data.emplace_back();
-  detail_->curve_names.emplace_back(name);
+  detail_->curves.emplace_back();
+  detail_->curve_titles.emplace_back(title);
   detail_->curve_boundaries.emplace_back();
   detail_->curve_nbins.push_back(50);
   return i;
+}
+
+size_t HistOutput::get_ncurve() const
+{
+  return detail_->curve_titles.size();
+}
+
+const char *HistOutput::get_curve_title(size_t i) const
+{
+  if(i >= detail_->curve_titles.size()) return nullptr;
+  return detail_->curve_titles[i];
 }
 
 bool HistOutput::fill_curve(size_t i, double value, double weight) const
@@ -90,7 +105,7 @@ bool HistOutput::bin(size_t i)
   double lb, ub;
   get_boundary(i, lb, ub);
   set_boundary(i, lb, ub);
-  TH1F *curve = new TH1F("", detail_->curve_names[i], detail_->curve_nbins[i], lb, ub);
+  TH1F *curve = new TH1F("", detail_->curve_titles[i], detail_->curve_nbins[i], lb, ub);
   if(title_) curve->SetXTitle(title_);
   for(const auto &vw : detail_->data[i]) {
     curve->Fill(vw.first, vw.second);
@@ -103,12 +118,11 @@ bool HistOutput::bin(size_t i)
 bool HistOutput::save() const
 {
   if(!filename_) return false;
-  unique_ptr<TCanvas> canvas(new TCanvas);
-  canvas->cd();
+  detail_->canvas->cd();
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin(i);
     detail_->curves[i]->Draw("HIST,SAME");
   }
-  canvas->SaveAs(filename_);
+  detail_->canvas->SaveAs(filename_);
   return true;
 }

@@ -164,6 +164,7 @@ bool TreeInput::next()
     if(detail_->local_index == (size_t)-1) {
       cerr << "Warning: empty tree in file: " << get_filename() << endl;
     }
+    clog << "Info: closing file: " << get_filename() << endl;
     detail_->tree.reset();
     detail_->file.reset();
     detail_->local_index = -1;
@@ -176,6 +177,7 @@ bool TreeInput::next()
   for(;;) {
     const char *filename = get_filename(++detail_->ifilename);
     if(filename == nullptr) break;
+    clog << "Info: opening file: " << get_filename() << endl;
 
     unique_ptr<TFile> file(new TFile(filename));
     if(!file->IsOpen()) {
