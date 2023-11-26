@@ -3,6 +3,7 @@
 #include "../include/CMS_lumi.h"
 #include <TH1F.h>
 #include <TCanvas.h>
+#include <TLegend.h>
 #include <vector>
 #include <memory>
 #include <string>
@@ -144,6 +145,7 @@ bool HistOutput::bin(size_t i)
   set_boundary(i, lb, ub);
   TH1F *curve = new TH1F("", detail_->curve_titles[i], detail_->curve_nbins[i], lb, ub);
   if(title_) curve->SetXTitle(title_);
+  curve->SetYTitle("number");  // [XXX]
   for(const auto &vw : detail_->data[i]) {
     curve->Fill(vw.first, vw.second);
   }
@@ -158,11 +160,18 @@ bool HistOutput::save() const
   detail_->canvas->cd();
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin(i);
+    TH1 *curve = detail_->curves[i].get();
+    curve->SetLineColor(i + 1);
     string options = "HIST";
     if(i) options += ",SAME";
-    detail_->curves[i]->Draw(options.c_str());
+    curve->Draw(options.c_str());
   }
+
+  TLegend *legend = detail_->canvas->BuildLegend(0.65, 0.75, 0.95, 0.9);  // [XXX]
+  legend->Draw();
+
   detail_->apply_cms_style();
+  detail_->canvas->SetLogy();  // [XXX]
   detail_->canvas->SaveAs(filename_);
   return true;
 }

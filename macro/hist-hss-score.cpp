@@ -23,7 +23,7 @@ public:
     add_curve("Wlv_Zdd");  // 0
     add_curve("Wlv_Zuu");  // 1
     add_curve("Wlv_Zss");  // 2
-    add_curve("Wlv_Zbb");  // 3
+    add_curve("Wlv_Zcc");  // 3
     for(size_t i = 0; i < 4; ++i) set_boundary(i, 0.0, 1.0), bin(i);
   }
 
