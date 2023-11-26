@@ -42,9 +42,9 @@ public:
   bool save() const;
 
 protected:
-  const char *xtitle_;
-  const char *ytitle_;
-  const char *filename_;
+  char *xtitle_;
+  char *ytitle_;
+  char *filename_;
   struct { double xl, xh, yl, yh; } legend_pos_;
   bool logx_, logy_;
   class Detail; Detail *detail_;

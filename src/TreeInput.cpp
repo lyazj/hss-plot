@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <functional>
 #include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 
@@ -45,7 +46,7 @@ public:
 };
 
 TreeInput::TreeInput(const char *name)
-  : name_(name)
+  : name_(strdup(name))
 {
   detail_ = new Detail;
   detail_->ifilename = -1;
@@ -56,6 +57,7 @@ TreeInput::TreeInput(const char *name)
 TreeInput::~TreeInput()
 {
   delete detail_;
+  free(name_);
 }
 
 const char *TreeInput::get_filename() const

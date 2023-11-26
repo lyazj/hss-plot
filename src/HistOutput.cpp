@@ -10,6 +10,8 @@
 #include <utility>
 #include <algorithm>
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -18,7 +20,7 @@ public:
   vector<vector<pair<double, double>>> data;
   vector<pair<double, double>> data_minmax;
   vector<unique_ptr<TH1>> curves;
-  vector<const char *> curve_titles;
+  vector<string> curve_titles;
   vector<unique_ptr<pair<double, double>>> curve_boundaries;
   vector<size_t> curve_nbins;
   unique_ptr<TCanvas> canvas;
@@ -59,7 +61,7 @@ public:
 };
 
 HistOutput::HistOutput(const char *xtitle, const char *ytitle, const char *filename)
-  : xtitle_(xtitle), ytitle_(ytitle), filename_(filename), legend_pos_{0.65, 0.95, 0.75, 0.9}
+  : xtitle_(strdup(xtitle)), ytitle_(strdup(ytitle)), filename_(strdup(filename)), legend_pos_{0.65, 0.95, 0.75, 0.9}
 {
   detail_ = new Detail;
   detail_->canvas.reset(new TCanvas);
@@ -70,6 +72,9 @@ HistOutput::~HistOutput()
 {
   save();
   delete detail_;
+  free(filename_);
+  free(ytitle_);
+  free(xtitle_);
 }
 
 size_t HistOutput::add_curve(const char *title)
@@ -92,7 +97,7 @@ size_t HistOutput::get_ncurve() const
 const char *HistOutput::get_curve_title(size_t i) const
 {
   if(i >= detail_->curve_titles.size()) return nullptr;
-  return detail_->curve_titles[i];
+  return detail_->curve_titles[i].c_str();
 }
 
 bool HistOutput::fill_curve(size_t i, double value, double weight) const
@@ -154,7 +159,7 @@ bool HistOutput::bin(size_t i)
   double lb, ub;
   get_boundary(i, lb, ub);
   set_boundary(i, lb, ub);
-  TH1F *curve = new TH1F("", detail_->curve_titles[i], detail_->curve_nbins[i], lb, ub);
+  TH1F *curve = new TH1F("", detail_->curve_titles[i].c_str(), detail_->curve_nbins[i], lb, ub);
   if(xtitle_) curve->SetXTitle(xtitle_);
   if(ytitle_) curve->SetYTitle(ytitle_);
   for(const auto &vw : detail_->data[i]) {

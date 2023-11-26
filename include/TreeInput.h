@@ -34,6 +34,6 @@ public:
   virtual bool next() override;
 
 protected:
-  const char *name_;
+  char *name_;
   class Detail; Detail *detail_;
 };
