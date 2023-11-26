@@ -8,12 +8,15 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <algorithm>
+#include <math.h>
 
 using namespace std;
 
 class HistOutput::Detail {
 public:
   vector<vector<pair<double, double>>> data;
+  vector<pair<double, double>> data_minmax;
   vector<unique_ptr<TH1>> curves;
   vector<const char *> curve_titles;
   vector<unique_ptr<pair<double, double>>> curve_boundaries;
@@ -55,8 +58,8 @@ public:
   }
 };
 
-HistOutput::HistOutput(const char *title, const char *filename)
-  : title_(title), filename_(filename)
+HistOutput::HistOutput(const char *xtitle, const char *ytitle, const char *filename)
+  : xtitle_(xtitle), ytitle_(ytitle), filename_(filename), legend_pos_{0.65, 0.95, 0.75, 0.9}
 {
   detail_ = new Detail;
   detail_->canvas.reset(new TCanvas);
@@ -73,6 +76,7 @@ size_t HistOutput::add_curve(const char *title)
 {
   size_t i = detail_->data.size();
   detail_->data.emplace_back();
+  detail_->data_minmax.emplace_back(INFINITY, -INFINITY);
   detail_->curves.emplace_back();
   detail_->curve_titles.emplace_back(title);
   detail_->curve_boundaries.emplace_back();
@@ -93,9 +97,13 @@ const char *HistOutput::get_curve_title(size_t i) const
 
 bool HistOutput::fill_curve(size_t i, double value, double weight) const
 {
-  if(i >= detail_->data.size()) return false;
+  if(i >= detail_->curves.size()) return false;
+  if(!isfinite(value) || !isfinite(weight)) return false;
   if(detail_->curves[i]) { detail_->curves[i]->Fill(value, weight); return true; }
   detail_->data[i].emplace_back(value, weight);
+  double min_value = min(value, detail_->data_minmax[i].first);
+  double max_value = max(value, detail_->data_minmax[i].second);
+  detail_->data_minmax[i] = { min_value, max_value };
   return true;
 }
 
@@ -104,7 +112,10 @@ bool HistOutput::get_boundary(size_t i, double &lb, double &ub) const
   if(i >= detail_->curve_boundaries.size()) return false;
   auto boundary = detail_->curve_boundaries[i].get();
   if(boundary) lb = boundary->first, ub = boundary->second;
-  else lb = 0.0, ub = 1.0;  // [XXX]
+  lb = 0.0, ub = 1.0;
+  double min_value = detail_->data_minmax[i].first;
+  double max_value = detail_->data_minmax[i].second;
+  if(isfinite(min_value) && isfinite(max_value)) lb = min_value, ub = max_value;
   return true;
 }
 
@@ -144,8 +155,8 @@ bool HistOutput::bin(size_t i)
   get_boundary(i, lb, ub);
   set_boundary(i, lb, ub);
   TH1F *curve = new TH1F("", detail_->curve_titles[i], detail_->curve_nbins[i], lb, ub);
-  if(title_) curve->SetXTitle(title_);
-  curve->SetYTitle("number");  // [XXX]
+  if(xtitle_) curve->SetXTitle(xtitle_);
+  if(ytitle_) curve->SetYTitle(ytitle_);
   for(const auto &vw : detail_->data[i]) {
     curve->Fill(vw.first, vw.second);
   }
@@ -156,8 +167,9 @@ bool HistOutput::bin(size_t i)
 
 bool HistOutput::save() const
 {
+  TCanvas *canvas = detail_->canvas.get();
   if(!filename_) return false;
-  detail_->canvas->cd();
+  canvas->cd();
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin(i);
     TH1 *curve = detail_->curves[i].get();
@@ -167,11 +179,14 @@ bool HistOutput::save() const
     curve->Draw(options.c_str());
   }
 
-  TLegend *legend = detail_->canvas->BuildLegend(0.65, 0.75, 0.95, 0.9);  // [XXX]
-  legend->Draw();
+  if(get_ncurve() > 1) {
+    TLegend *legend = canvas->BuildLegend(legend_pos_.xl, legend_pos_.yl, legend_pos_.xh, legend_pos_.yh);
+    legend->Draw();
+  }
 
   detail_->apply_cms_style();
-  detail_->canvas->SetLogy();  // [XXX]
-  detail_->canvas->SaveAs(filename_);
+  canvas->SetLogx(logx_);
+  canvas->SetLogy(logy_);
+  canvas->SaveAs(filename_);
   return true;
 }

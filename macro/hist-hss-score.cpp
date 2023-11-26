@@ -13,7 +13,7 @@ using namespace std;
 
 class Tree2Hist : public TreeInput, public HistOutput {
 public:
-  Tree2Hist() : TreeInput("Events"), HistOutput("HssVSQCD", "HssVSQCD.pdf") {
+  Tree2Hist() : TreeInput("Events"), HistOutput("HssVSQCD", "number", "HssVSQCD.pdf") {
     add_branch("ak15_ParTMDV2_Hss");        // 0
     add_branch("ak15_ParTMDV2_QCDbb");      // 1
     add_branch("ak15_ParTMDV2_QCDb");       // 2
@@ -25,6 +25,7 @@ public:
     add_curve("Wlv_Zss");  // 2
     add_curve("Wlv_Zcc");  // 3
     for(size_t i = 0; i < 4; ++i) set_boundary(i, 0.0, 1.0), bin(i);
+    set_logy(true);
   }
 
   virtual bool process() const override {
