@@ -67,8 +67,8 @@ ListDir::ListDir(const string &dirpath_in, int accept)
 
   DIR *dir = opendir(dirpath_in.c_str());
   if(dir == NULL) {
-    throw runtime_error("opendir: "s +
-        dirpath_in + ": "s + strerror(errno));
+    throw runtime_error(string("opendir: ") +
+        dirpath_in + ": " + strerror(errno));
   }
   shared_ptr<DIR> dir_guard(dir, [](DIR *d) { closedir(d); });
 
@@ -78,8 +78,8 @@ ListDir::ListDir(const string &dirpath_in, int accept)
     struct dirent *ent = readdir(dir);
     if(ent == NULL) {
       if(errno == 0) break;
-      throw runtime_error("readdir: "s +
-          dirpath_in + ": "s + strerror(errno));
+      throw runtime_error(string("readdir: ") +
+          dirpath_in + ": " + strerror(errno));
     }
     if(DT_MAP(ent->d_type) & accept) {
       names.push_back(ent->d_name);
@@ -133,7 +133,7 @@ Stat::Stat(const char *path)
     sbuf = NULL;
     r = errno;
     if(r == ENOENT) return;
-    throw runtime_error(path + ": "s + strerror(r));
+    throw runtime_error(path + string(": ") + strerror(r));
   }
 }
 
