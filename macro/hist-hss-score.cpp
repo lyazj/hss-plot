@@ -86,39 +86,39 @@ private:
     if(nbin == 0) return;
 
     double s_total, b_total = 0.0;
+    double sf = 1e6 / 7395487;  // [XXX] Scale to 10^6 events (100/fb).
     vector<Double_t *> integrals(4);
+    vector<Double_t> totals(4);
     for(size_t i = 0; i < 4; ++i) {
       integrals[i] = get_curve(i)->GetIntegral();
-      if(i == 2) s_total = integrals[i][nbin];
-      else b_total += integrals[i][nbin];
+      totals[i] = get_curve(i)->GetEffectiveEntries() * sf;
+      if(i == 2) s_total = integrals[i][nbin] * totals[i];
+      else b_total += integrals[i][nbin] * totals[i];
     }
-
-    double sf = 1e6 / 7395487;  // [XXX] Scale to 10^6 events (100/fb).
 
     vector<tuple<double, double, double, double>> significance;
     significance.reserve(nbin - 1);
     for(size_t left_last_bin = 0; left_last_bin < nbin; ++left_last_bin) {
       double s_left, b_left = 0.0;
       for(size_t i = 0; i < 4; ++i) {
-        if(i == 2) s_left = integrals[i][left_last_bin];
-        else b_left += integrals[i][left_last_bin];
+        if(i == 2) s_left = integrals[i][left_last_bin] * totals[i];
+        else b_left += integrals[i][left_last_bin] * totals[i];
       }
       double s_right = s_total - s_left;
       double b_right = b_total - b_left;
-      double sig = get_signal_significance(s_right, b_right, sf);
+      double sig = get_signal_significance(s_right, b_right);
       if(!isfinite(sig)) sig = 0.0;
       significance.emplace_back(sig, get_curve(0)->GetBinLowEdge(left_last_bin + 1), s_right, b_right);
     }
     sort(significance.begin(), significance.end());
     reverse(significance.begin(), significance.end());
-    cout << "sig.\tpos.\tsg.\tbg." << endl << fixed << setprecision(3);
+    cout << "sig.\tpos.\tsg.\tbg." << endl << scientific << setprecision(1);
     for(const auto &rec : significance) {
       cout << get<0>(rec) << '\t' << get<1>(rec) << '\t' << get<2>(rec) << '\t' << get<3>(rec) << endl;
     }
   }
 
-  static double get_signal_significance(double s, double b, double sf) {
-    s *= sf, b *= sf;
+  static double get_signal_significance(double s, double b) {
     return sqrt(2 * ((s + b) * log(1 + s / b) - s));
   }
 };
