@@ -1,4 +1,6 @@
 #include "../include/HistOutput.h"
+#include "../include/tdrstyle.h"
+#include "../include/CMS_lumi.h"
 #include <TH1F.h>
 #include <TCanvas.h>
 #include <vector>
@@ -16,6 +18,40 @@ public:
   vector<unique_ptr<pair<double, double>>> curve_boundaries;
   vector<size_t> curve_nbins;
   unique_ptr<TCanvas> canvas;
+
+  void init_cms_style() const {
+    setTDRStyle();
+    canvas->SetWindowSize(1200, 900);
+    canvas->SetFillColor(0);
+    canvas->SetBorderMode(0);
+    canvas->SetFrameFillStyle(0);
+    canvas->SetFrameBorderMode(0);
+    canvas->SetLeftMargin(0.15);
+    canvas->SetRightMargin(0.04);
+    canvas->SetTopMargin(0.08);
+    canvas->SetBottomMargin(0.12);
+    canvas->SetTickx(0);
+    canvas->SetTicky(0);
+
+    writeExtraText = true;  // if extra text
+    extraText = "Preliminary";  // default extra text is "Preliminary"
+    //lumi_8TeV = "19.1 fb^{-1}";  // default is "19.7 fb^{-1}"
+    //lumi_7TeV = "4.9 fb^{-1}";  // default is "5.1 fb^{-1}"
+    lumi_sqrtS = "13 TeV";  // used with iPeriod = 0
+                            // e.g. for simulation-only plots (default is an empty string)
+  }
+
+  void apply_cms_style() const {
+    int iPeriod = 0;  // 1=7TeV, 2=8TeV, 3=7+8TeV, 7=7+8+13TeV, 0=free form (uses lumi_sqrtS)
+    // iPos drives the position of the CMS logo in the plot
+    // iPos=11 : top-left, left-aligned
+    // iPos=33 : top-right, right-aligned
+    // iPos=22 : center, centered
+    // mode generally :
+    //   iPos = 10*(alignement 1/2/3) + position (1/2/3 = left/center/right)
+    int iPos = 11;
+    CMS_lumi(canvas.get(), iPeriod, iPos);
+  }
 };
 
 HistOutput::HistOutput(const char *title, const char *filename)
@@ -23,6 +59,7 @@ HistOutput::HistOutput(const char *title, const char *filename)
 {
   detail_ = new Detail;
   detail_->canvas.reset(new TCanvas);
+  detail_->init_cms_style();
 }
 
 HistOutput::~HistOutput()
@@ -121,8 +158,11 @@ bool HistOutput::save() const
   detail_->canvas->cd();
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin(i);
-    detail_->curves[i]->Draw("HIST,SAME");
+    string options = "HIST";
+    if(i) options += ",SAME";
+    detail_->curves[i]->Draw(options.c_str());
   }
+  detail_->apply_cms_style();
   detail_->canvas->SaveAs(filename_);
   return true;
 }
