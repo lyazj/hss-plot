@@ -5,9 +5,13 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <tuple>
+#include <algorithm>
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <TH1.h>
 
 using namespace std;
 
@@ -24,9 +28,12 @@ public:
     add_curve("Wlv_Zuu");  // 1
     add_curve("Wlv_Zss");  // 2
     add_curve("Wlv_Zcc");  // 3
-    for(size_t i = 0; i < 4; ++i) set_boundary(i, lb, ub), bin(i);
+    set_boundary(lb, ub);
+    bin();
     set_logy(true);
   }
+
+  ~Tree2Hist() { optimize(); }
 
   virtual bool process() const override {
     // Extract Zqq flavour.
@@ -70,6 +77,43 @@ private:
 
   static string get_output_filename(double lb, double ub) {
     return "HssVSQCD_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
+  }
+
+  void optimize() const {
+    size_t nbin = get_nbin();
+    if(nbin == 0) return;
+
+    double s_total, b_total = 0.0;
+    vector<Double_t *> integrals(4);
+    for(size_t i = 0; i < 4; ++i) {
+      integrals[i] = get_curve(i)->GetIntegral();
+      if(i == 2) s_total = integrals[i][nbin];
+      else b_total += integrals[i][nbin];
+    }
+
+    vector<tuple<double, double, double, double>> significance;
+    significance.reserve(nbin - 1);
+    for(size_t left_last_bin = 1; left_last_bin < nbin; ++left_last_bin) {
+      double s_left, b_left = 0.0;
+      for(size_t i = 0; i < 4; ++i) {
+        if(i == 2) s_left = integrals[i][left_last_bin];
+        else b_left += integrals[i][left_last_bin];
+      }
+      double s_right = s_total - s_left;
+      double b_right = b_total - b_left;
+      double sig = get_signal_significance(s_right, b_right);
+      if(!isfinite(sig)) sig = 0.0;
+      significance.emplace_back(sig, get_curve(0)->GetBinLowEdge(left_last_bin + 1), s_right, b_right);
+      sort(significance.begin(), significance.end());
+      cout << "sig.\tpos.\tsg.\tbg." << endl;
+      for(const auto &rec : significance) {
+        cout << get<0>(rec) << '\t' << get<1>(rec) << '\t' << get<2>(rec) << '\t' << get<3>(rec) << endl;
+      }
+    }
+  }
+
+  static double get_signal_significance(double s, double b) {
+    return sqrt(2 * s * ((s + b) * log(1 + s / b) - 1));
   }
 };
 

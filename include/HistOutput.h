@@ -2,6 +2,8 @@
 #include "interface.h"
 #include <stddef.h>
 
+class TH1;
+
 // Use saved TCanvas to filename as IEvent destination.
 class HistOutput : virtual public IEvent {
 public:
@@ -14,17 +16,18 @@ public:
   // Curves in the same plot.
   size_t add_curve(const char *title);
   size_t get_ncurve() const;
+  TH1 *get_curve(size_t) const;
   const char *get_curve_title(size_t) const;
   bool fill_curve(size_t, double value, double weight = 1.0) const;
   virtual bool process() const override = 0;
 
   // Boundary and binning control.
-  bool get_boundary(size_t, double &, double &) const;
-  bool set_boundary(size_t, double, double);
-  bool get_nbin(size_t, size_t &) const;
-  bool set_nbin(size_t, size_t);
-  bool is_binned(size_t, bool &) const;
-  bool bin(size_t);
+  void get_boundary(double &, double &) const;
+  void set_boundary(double, double);
+  size_t get_nbin() const;
+  void set_nbin(size_t);
+  bool is_binned() const;
+  void bin();
 
   // Legend control.
   void get_legend_pos(double &xl, double &xh, double &yl, double &yh)

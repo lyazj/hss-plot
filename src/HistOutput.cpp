@@ -18,11 +18,11 @@ using namespace std;
 class HistOutput::Detail {
 public:
   vector<vector<pair<double, double>>> data;
-  vector<pair<double, double>> data_minmax;
+  double data_min, data_max;
+  double data_lb, data_ub;
+  size_t nbin;
   vector<unique_ptr<TH1>> curves;
   vector<string> curve_titles;
-  vector<unique_ptr<pair<double, double>>> curve_boundaries;
-  vector<size_t> curve_nbins;
   unique_ptr<TCanvas> canvas;
 
   void init_cms_style() const {
@@ -38,16 +38,15 @@ public:
     canvas->SetBottomMargin(0.12);
     canvas->SetTickx(0);
     canvas->SetTicky(0);
+  }
 
+  void apply_cms_style() const {
     writeExtraText = true;  // if extra text
     extraText = "Preliminary";  // default extra text is "Preliminary"
     //lumi_8TeV = "19.1 fb^{-1}";  // default is "19.7 fb^{-1}"
     //lumi_7TeV = "4.9 fb^{-1}";  // default is "5.1 fb^{-1}"
     lumi_sqrtS = "13 TeV";  // used with iPeriod = 0
                             // e.g. for simulation-only plots (default is an empty string)
-  }
-
-  void apply_cms_style() const {
     int iPeriod = 0;  // 1=7TeV, 2=8TeV, 3=7+8TeV, 7=7+8+13TeV, 0=free form (uses lumi_sqrtS)
     // iPos drives the position of the CMS logo in the plot
     // iPos=11 : top-left, left-aligned
@@ -65,6 +64,11 @@ HistOutput::HistOutput(const char *xtitle, const char *ytitle, const char *filen
 {
   detail_ = new Detail;
   detail_->canvas.reset(new TCanvas);
+  detail_->data_min = +INFINITY;
+  detail_->data_max = -INFINITY;
+  detail_->data_lb = +INFINITY;
+  detail_->data_ub = -INFINITY;
+  detail_->nbin = 50;
   detail_->init_cms_style();
 }
 
@@ -81,17 +85,19 @@ size_t HistOutput::add_curve(const char *title)
 {
   size_t i = detail_->data.size();
   detail_->data.emplace_back();
-  detail_->data_minmax.emplace_back(INFINITY, -INFINITY);
-  detail_->curves.emplace_back();
   detail_->curve_titles.emplace_back(title);
-  detail_->curve_boundaries.emplace_back();
-  detail_->curve_nbins.push_back(50);
   return i;
 }
 
 size_t HistOutput::get_ncurve() const
 {
   return detail_->curve_titles.size();
+}
+
+TH1 *HistOutput::get_curve(size_t i) const
+{
+  if(i >= detail_->curves.size()) return nullptr;
+  return detail_->curves[i].get();
 }
 
 const char *HistOutput::get_curve_title(size_t i) const
@@ -102,72 +108,65 @@ const char *HistOutput::get_curve_title(size_t i) const
 
 bool HistOutput::fill_curve(size_t i, double value, double weight) const
 {
-  if(i >= detail_->curves.size()) return false;
+  if(i >= get_ncurve()) return false;
   if(!isfinite(value) || !isfinite(weight)) return false;
-  if(detail_->curves[i]) { detail_->curves[i]->Fill(value, weight); return true; }
+  if(is_binned()) { detail_->curves[i]->Fill(value, weight); return true; }
   detail_->data[i].emplace_back(value, weight);
-  double min_value = min(value, detail_->data_minmax[i].first);
-  double max_value = max(value, detail_->data_minmax[i].second);
-  detail_->data_minmax[i] = { min_value, max_value };
+  detail_->data_min = min(detail_->data_min, value);
+  detail_->data_max = max(detail_->data_max, value);
   return true;
 }
 
-bool HistOutput::get_boundary(size_t i, double &lb, double &ub) const
+void HistOutput::get_boundary(double &lb, double &ub) const
 {
-  if(i >= detail_->curve_boundaries.size()) return false;
-  auto boundary = detail_->curve_boundaries[i].get();
-  if(boundary) { lb = boundary->first, ub = boundary->second; return true; }
+  double data_lb = detail_->data_lb;
+  double data_ub = detail_->data_ub;
+  if(isfinite(data_lb) && isfinite(data_ub)) { lb = data_lb, ub = data_ub; return; }
+
+  double data_min = detail_->data_min;
+  double data_max = detail_->data_max;
+  if(isfinite(data_min) && isfinite(data_max)) { lb = data_min, ub = data_max; return; }
+
   lb = 0.0, ub = 1.0;
-  double min_value = detail_->data_minmax[i].first;
-  double max_value = detail_->data_minmax[i].second;
-  if(isfinite(min_value) && isfinite(max_value)) lb = min_value, ub = max_value;
-  return true;
 }
 
-bool HistOutput::set_boundary(size_t i, double lb, double ub)
+void HistOutput::set_boundary(double lb, double ub)
 {
-  if(i >= detail_->curve_boundaries.size()) return false;
-  detail_->curve_boundaries[i].reset(new pair<double, double>(lb, ub));
-  return true;
+  detail_->data_lb = lb;
+  detail_->data_ub = ub;
 }
 
-bool HistOutput::get_nbin(size_t i, size_t &nbin) const
+size_t HistOutput::get_nbin() const
 {
-  if(i >= detail_->curve_nbins.size()) return false;
-  nbin = detail_->curve_nbins[i];
-  return true;
+  return detail_->nbin;
 }
 
-bool HistOutput::set_nbin(size_t i, size_t nbin)
+void HistOutput::set_nbin(size_t nbin)
 {
-  if(i >= detail_->curve_nbins.size()) return false;
-  detail_->curve_nbins[i] = nbin;
-  return true;
+  detail_->nbin = nbin;
 }
 
-bool HistOutput::is_binned(size_t i, bool &binned) const
+bool HistOutput::is_binned() const
 {
-  if(i >= detail_->curves.size()) return false;
-  binned = (bool)detail_->curves[i];
-  return true;
+  return !detail_->curves.empty();
 }
 
-bool HistOutput::bin(size_t i)
+void HistOutput::bin()
 {
-  if(i >= detail_->curves.size()) return false;
-  if(detail_->curves[i]) return true;
+  if(is_binned()) return;
   double lb, ub;
-  get_boundary(i, lb, ub);
-  set_boundary(i, lb, ub);
-  TH1F *curve = new TH1F("", detail_->curve_titles[i].c_str(), detail_->curve_nbins[i], lb, ub);
-  if(xtitle_) curve->SetXTitle(xtitle_);
-  if(ytitle_) curve->SetYTitle(ytitle_);
-  for(const auto &vw : detail_->data[i]) {
-    curve->Fill(vw.first, vw.second);
+  get_boundary(lb, ub);
+  set_boundary(lb, ub);
+  for(size_t i = 0; i < get_ncurve(); ++i) {
+    TH1F *curve = new TH1F("", get_curve_title(i), get_nbin(), lb, ub);
+    if(xtitle_) curve->SetXTitle(xtitle_);
+    if(ytitle_) curve->SetYTitle(ytitle_);
+    for(const auto &vw : detail_->data[i]) {
+      curve->Fill(vw.first, vw.second);
+    }
+    detail_->data[i] = { };
+    detail_->curves[i].reset(curve);
   }
-  detail_->data[i] = { };
-  detail_->curves[i].reset(curve);
-  return true;
 }
 
 bool HistOutput::save() const
@@ -176,7 +175,7 @@ bool HistOutput::save() const
   if(!filename_) return false;
   canvas->cd();
   for(size_t i = 0; i < get_ncurve(); ++i) {
-    const_cast<HistOutput *>(this)->bin(i);
+    const_cast<HistOutput *>(this)->bin();
     TH1 *curve = detail_->curves[i].get();
     curve->SetLineColor(i + 1);
     string options = "HIST";
