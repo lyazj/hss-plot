@@ -25,7 +25,7 @@ int main()
 {
   unique_ptr<Tree2Hist> event(new Tree2Hist);
   event->add_filename("../example/wzdd-tree.root");
-  EventAnalyzer analyzer(event.get());
-  analyzer.loop();
+  EventProcessor processor(event.get());
+  processor.loop();
   return 0;
 }

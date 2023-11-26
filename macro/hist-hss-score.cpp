@@ -13,7 +13,7 @@ using namespace std;
 
 class Tree2Hist : public TreeInput, public HistOutput {
 public:
-  Tree2Hist() : TreeInput("Events"), HistOutput("HssVSQCD", "number", "HssVSQCD.pdf") {
+  Tree2Hist(double lb, double ub) : TreeInput("Events"), HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str()) {
     add_branch("ak15_ParTMDV2_Hss");        // 0
     add_branch("ak15_ParTMDV2_QCDbb");      // 1
     add_branch("ak15_ParTMDV2_QCDb");       // 2
@@ -24,7 +24,7 @@ public:
     add_curve("Wlv_Zuu");  // 1
     add_curve("Wlv_Zss");  // 2
     add_curve("Wlv_Zcc");  // 3
-    for(size_t i = 0; i < 4; ++i) set_boundary(i, 0.0, 1.0), bin(i);
+    for(size_t i = 0; i < 4; ++i) set_boundary(i, lb, ub), bin(i);
     set_logy(true);
   }
 
@@ -67,24 +67,28 @@ private:
     path = path.substr(pos + 1);
     return atoi(path.c_str());
   }
+
+  static string get_output_filename(double lb, double ub) {
+    return "HssVSQCD_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
+  }
 };
 
 int main(int argc, const char *argv[])
 {
-  if(argc == 1) {
+  if(argc < 4) {
     cerr << "usage: " << program_invocation_short_name
-         << " <dir-to-root-files> [ <more-dir> ... ]" << endl;
+         << " <lower-bound> <upper-bound> <dir-to-root-files> [ <more-dir> ... ]" << endl;
     return 1;
   }
 
-  unique_ptr<Tree2Hist> event(new Tree2Hist);
-  for(int i = 1; i < argc; ++i) {
+  unique_ptr<Tree2Hist> event(new Tree2Hist(stod(argv[1]), stod(argv[2])));
+  for(int i = 3; i < argc; ++i) {
     ListDir lsrst(argv[i]);
     lsrst.sort_by_numbers();
     for(const string &name : lsrst.get_full_names()) event->add_filename(name.c_str());
   }
 
-  EventAnalyzer analyzer(event.get());
-  analyzer.loop();
+  EventProcessor processor(event.get());
+  processor.loop();
   return 0;
 }
