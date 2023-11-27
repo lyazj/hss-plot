@@ -1,4 +1,4 @@
-#include "../include/TreeInput.h"
+#include "TreeInput.h"
 #include <iostream>
 
 using namespace std;
@@ -7,7 +7,7 @@ int main()
 {
   TreeInput eviewer("Events");
   eviewer.add_filename("../example/wzdd-nano.root");
-  eviewer.add_filename("../example/wzdd-nano.root");
+  eviewer.add_filename("../example/wzdd-tree.root");
   size_t b_pdgid = eviewer.add_branch("GenPart_pdgId");
   while(eviewer.next()) {
     size_t ngenpar;

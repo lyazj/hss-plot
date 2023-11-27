@@ -9,7 +9,7 @@ public:
 
   // Move to the next event.
   // The viewer is initialized at the position before the first event.
-  // The first successful call to next() should switch to the first event.
+  // The first successful call to next() switches to the first event.
   // Returns: true if event switching succeeds, false otherwise.
   virtual bool next() { return false; };
 

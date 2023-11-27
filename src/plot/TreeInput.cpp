@@ -177,10 +177,9 @@ bool TreeInput::next()
     }
 
     // Reading failed. Close current file.
-    if(detail_->local_index == (size_t)-1) {
-      cerr << "Warning: empty tree in file: " << get_filename() << endl;
-    }
-    clog << "Info: closing file: " << get_filename() << endl;
+    size_t nread = detail_->local_index + 1;
+    size_t total = detail_->tree->GetEntries();
+    clog << "Info: closing file: [" << nread << "/" << total << "] " << get_filename() << endl;
     detail_->tree.reset();
     detail_->file.reset();
     detail_->local_index = -1;
@@ -260,6 +259,7 @@ bool TreeInput::next()
 
   // Reach the end.
   ++detail_->global_index;
+  clog << "Info: total events read: " << detail_->global_index << endl;
   detail_->branches.clear();
   detail_->branch_data.clear();
   detail_->branch_data_capacity.clear();

@@ -1,4 +1,4 @@
-#include "../include/TreeInput.h"
+#include "TreeInput.h"
 #include <iostream>
 
 using namespace std;

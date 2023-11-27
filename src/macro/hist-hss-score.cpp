@@ -1,6 +1,6 @@
-#include "../include/TreeInput.h"
-#include "../include/HistOutput.h"
-#include "../include/fs.h"
+#include "TreeInput.h"
+#include "HistOutput.h"
+#include "fs.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
