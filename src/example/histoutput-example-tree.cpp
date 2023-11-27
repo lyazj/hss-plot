@@ -3,7 +3,7 @@
 
 class Tree2Hist : public TreeInput, public HistOutput {
 public:
-  Tree2Hist() : TreeInput("Events"), HistOutput("ak15_phi", "number", "ak15_phi.pdf") {
+  Tree2Hist() : TreeInput("Events"), HistOutput("ak15_phi", "number", "../example/ak15_phi.pdf") {
     add_branch("ak15_phi");
     add_curve("tree");
     set_boundary(-3.5, 3.5);
