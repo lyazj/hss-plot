@@ -1,10 +1,5 @@
 #include "../include/TreeInput.h"
 #include "../include/HistOutput.h"
-#include "../include/flow.h"
-#include <memory>
-#include <iostream>
-
-using namespace std;
 
 class Tree2Hist : public TreeInput, public HistOutput {
 public:
@@ -15,17 +10,15 @@ public:
     bin();
   }
 
-  virtual bool process() const override {
+  virtual void process() override {
     fill_curve(0, *(float *)get_branch_data(0), 1.0);
-    return true;
   }
 };
 
 int main()
 {
-  unique_ptr<Tree2Hist> event(new Tree2Hist);
-  event->add_filename("../example/wzdd-tree.root");
-  EventProcessor processor(event.get());
-  processor.loop();
+  Tree2Hist eviewer;
+  eviewer.add_filename("../example/wzdd-tree.root");
+  eviewer.loop();
   return 0;
 }

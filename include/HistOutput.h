@@ -1,11 +1,11 @@
 #pragma once
-#include "interface.h"
+#include "EventViewer.h"
 #include <stddef.h>
 
 class TH1;
 
 // Use saved TCanvas to filename as IEvent destination.
-class HistOutput : virtual public IEvent {
+class HistOutput : virtual public EventViewer {
 public:
   HistOutput(const char *xtitle, const char *ytitle, const char *filename);
   ~HistOutput();
@@ -19,7 +19,7 @@ public:
   TH1 *get_curve(size_t) const;
   const char *get_curve_title(size_t) const;
   bool fill_curve(size_t, double value, double weight = 1.0) const;
-  virtual bool process() const override = 0;
+  virtual void process() override = 0;
 
   // Boundary and binning control.
   void get_boundary(double &, double &) const;

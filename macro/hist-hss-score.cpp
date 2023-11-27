@@ -1,8 +1,6 @@
 #include "../include/TreeInput.h"
 #include "../include/HistOutput.h"
-#include "../include/flow.h"
 #include "../include/fs.h"
-#include <memory>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -37,11 +35,11 @@ public:
 
   ~Tree2Hist() { optimize(); }
 
-  virtual bool process() const override {
+  virtual void process() override {
     // Extract Zqq flavour.
     string input_filename = TreeInput::get_filename();
     int pid = parse_pid(input_filename);
-    if(pid < 1 || pid > 4) return false;
+    if(pid < 1 || pid > 4) return;
 
     // Extract Hss and QCD scores.
     double Hss, QCD = 0.0;
@@ -49,14 +47,13 @@ public:
     for(size_t i = 1; i <= 5; ++i) QCD += *(float *)get_branch_data(i);
 
     // Compute Hss significance relevant to QCD.
-    if(Hss < 0 || QCD < 0) return false;
+    if(Hss < 0 || QCD < 0) return;
     double HssVSQCD = QCD / Hss;
-    if(std::isnan(HssVSQCD)) return false;
+    if(std::isnan(HssVSQCD)) return;
     HssVSQCD = 1.0 / (1.0 + HssVSQCD);
 
     // Submit result.
     this->fill_curve(pid - 1, HssVSQCD);
-    return true;
   }
 
 private:
@@ -131,14 +128,12 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  unique_ptr<Tree2Hist> event(new Tree2Hist(stod(argv[1]), stod(argv[2])));
+  Tree2Hist eviewer(stod(argv[1]), stod(argv[2]));
   for(int i = 3; i < argc; ++i) {
-    ListDir lsrst(argv[i]);
+    ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
-    for(const string &name : lsrst.get_full_names()) event->add_filename(name.c_str());
+    for(const string &name : lsrst.get_full_names()) eviewer.add_filename(name.c_str());
   }
-
-  EventProcessor processor(event.get());
-  processor.loop();
+  eviewer.loop();
   return 0;
 }

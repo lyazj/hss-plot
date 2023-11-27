@@ -10,13 +10,26 @@
 #include <string>
 #include <iostream>
 #include <utility>
-#include <iterator>
 #include <algorithm>
 #include <functional>
 #include <stdlib.h>
 #include <string.h>
 
 using namespace std;
+
+// Expand buffer (buf, bufsiz) to contain at least maxsiz bytes,
+// and initialize first initsiz bytes to 0 on success.
+// Returns true on success, false on failure.
+static bool expand_buffer_init(void *&buf, size_t &bufsiz, size_t maxsiz, size_t initsiz)
+{
+  if(bufsiz >= maxsiz) return true;
+  void *newbuf = realloc(buf, maxsiz);
+  if(newbuf == nullptr) return false;
+  memset(newbuf, 0, initsiz);
+  buf = newbuf;
+  bufsiz = maxsiz;
+  return true;
+}
 
 class TreeInput::Detail {
 public:
@@ -29,6 +42,7 @@ public:
   vector<string> branch_names;
   vector<TBranch *> branches;
   vector<unique_ptr<void, function<void(void *)>>> branch_data;
+  vector<size_t> branch_data_capacity;
   vector<size_t> branch_current_size;
   vector<size_t> branch_elem_size;
   vector<size_t> branch_nelem_max;
@@ -125,7 +139,7 @@ static size_t get_branch_elem_size_impl(TBranch *branch)
 {
   TClass *c; EDataType e;
   if(branch->GetExpectedType(c, e)) return 0;
-  if(c) return sizeof(void *);
+  if(c) return sizeof(void *);  // Class objects are referenced by pointers.
   return TDataType::GetDataType(e)->Size();
 }
 
@@ -154,8 +168,8 @@ size_t TreeInput::get_branch_nelem_max(size_t i) const
 
 bool TreeInput::next()
 {
-  // The most frequent case: step forward.
   if(detail_->tree) {
+    // The most frequent case: step forward within current file.
     if(detail_->GetEntry(detail_->local_index + 1) > 0) {
       ++detail_->local_index;
       ++detail_->global_index;
@@ -193,8 +207,9 @@ bool TreeInput::next()
       continue;
     }
 
+    vector<unique_ptr<void, function<void(void *)>>> &branch_data = detail_->branch_data;
+    vector<size_t> &branch_data_capacity = detail_->branch_data_capacity;
     vector<TBranch *> branches;
-    vector<unique_ptr<void, function<void(void *)>>> branch_data;
     vector<size_t> branch_current_size;
     vector<size_t> branch_elem_size;
     vector<size_t> branch_nelem_max;
@@ -211,14 +226,22 @@ bool TreeInput::next()
         cerr << "Warning: skipping file with unsupported branch " << name << ": " << filename << endl;
         goto CONTINUE;
       }
-      char *buf = (char *)calloc(nelem_max, elem_size);  // zero-initialized, important for TLeafObject
-      if(buf == NULL) {
+      size_t max_size = elem_size * nelem_max;
+      size_t i = branches.size();
+      if(branch_data.size() == i) {
+        branch_data.emplace_back(nullptr, [](void *p) { free(p); });
+        branch_data_capacity.emplace_back(0);
+      }
+      void *buf = branch_data[i].get();
+      if(expand_buffer_init(buf, branch_data_capacity[i], max_size, sizeof(void *))) {
+        branch_data[i].release();
+        branch_data[i].reset(buf);
+      } else {
         cerr << "Warning: skipping file with branch " << name << " unallocable: " << filename << endl;
         goto CONTINUE;
       }
       branch->SetAddress(buf);
       branches.emplace_back(branch);
-      branch_data.emplace_back(buf, [](void *p) { free(p); });
       branch_current_size.push_back(0);
       branch_elem_size.push_back(elem_size);
       branch_nelem_max.push_back(nelem_max);
@@ -227,7 +250,6 @@ bool TreeInput::next()
     detail_->file = std::move(file);
     detail_->tree = std::move(tree);
     detail_->branches = std::move(branches);
-    detail_->branch_data = std::move(branch_data);
     detail_->branch_current_size = std::move(branch_current_size);
     detail_->branch_elem_size = std::move(branch_elem_size);
     detail_->branch_nelem_max = std::move(branch_nelem_max);
@@ -240,6 +262,7 @@ bool TreeInput::next()
   ++detail_->global_index;
   detail_->branches.clear();
   detail_->branch_data.clear();
+  detail_->branch_data_capacity.clear();
   detail_->branch_current_size.clear();
   detail_->branch_elem_size.clear();
   detail_->branch_nelem_max.clear();
