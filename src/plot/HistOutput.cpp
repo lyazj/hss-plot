@@ -41,12 +41,6 @@ public:
   }
 
   void apply_cms_style() const {
-    writeExtraText = true;  // if extra text
-    extraText = "Preliminary";  // default extra text is "Preliminary"
-    //lumi_8TeV = "19.1 fb^{-1}";  // default is "19.7 fb^{-1}"
-    //lumi_7TeV = "4.9 fb^{-1}";  // default is "5.1 fb^{-1}"
-    lumi_sqrtS = "13 TeV";  // used with iPeriod = 0
-                            // e.g. for simulation-only plots (default is an empty string)
     int iPeriod = 0;  // 1=7TeV, 2=8TeV, 3=7+8TeV, 7=7+8+13TeV, 0=free form (uses lumi_sqrtS)
     // iPos drives the position of the CMS logo in the plot
     // iPos=11 : top-left, left-aligned

@@ -1,3 +1,4 @@
+#include "CMS_lumi.h"
 #include "TreeInput.h"
 #include "HistOutput.h"
 #include "fs.h"
@@ -127,6 +128,7 @@ int main(int argc, char *argv[])
          << " <lower-bound> <upper-bound> <dir-to-root-files> [ <more-dir> ... ]" << endl;
     return 1;
   }
+  lumi_sqrtS = "2018 1L simulation";  // [XXX]
 
   Tree2Hist eviewer(stod(argv[1]), stod(argv[2]));
   for(int i = 3; i < argc; ++i) {
