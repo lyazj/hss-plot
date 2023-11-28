@@ -1,4 +1,4 @@
-#include "../include/CMS_lumi.h"
+#include "CMS_lumi.h"
 
 // source: https://github.com/UHHAnalysis/ZprimeFullHadAnalysis/blob/master/CMS_lumi.C
 // modified by lyazj@github.com for compilation use

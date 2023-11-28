@@ -1,6 +1,6 @@
-#include "../include/HistOutput.h"
-#include "../include/tdrstyle.h"
-#include "../include/CMS_lumi.h"
+#include "HistOutput.h"
+#include "tdrstyle.h"
+#include "CMS_lumi.h"
 #include <TH1F.h>
 #include <TCanvas.h>
 #include <TLegend.h>

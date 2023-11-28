@@ -1,5 +1,5 @@
-#include "../include/TreeInput.h"
-#include "../include/HistOutput.h"
+#include "TreeInput.h"
+#include "HistOutput.h"
 
 class Tree2Hist : public TreeInput, public HistOutput {
 public:

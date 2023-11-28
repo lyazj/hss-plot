@@ -1,4 +1,4 @@
-#include "../include/tdrstyle.h"
+#include "tdrstyle.h"
 #include <TStyle.h>
 #include <TPad.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-#include "../include/TreeInput.h"
+#include "TreeInput.h"
 #include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
