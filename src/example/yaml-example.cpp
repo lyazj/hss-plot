@@ -1,15 +1,15 @@
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 #include <iostream>
 
 using namespace std;
 
 int main()
 {
-  YAML::Node samples = YAML::LoadFile("../example/1L_mc.yaml");
+  YAML::Node samples = YAML::LoadFile("../example/2018_1L_mc.yaml");
   for(auto categories : samples) {
-    cout << "- " << categories.first << endl;
-    for(auto prepid : categories.second) {
-      cout << "  + " << prepid << endl;
+    cout << "- " << categories["name"] << endl;
+    for(auto sample : categories["samples"]) {
+      cout << "  + " << sample["name"] << endl;
     }
   }
   return 0;

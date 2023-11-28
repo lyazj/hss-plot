@@ -1,0 +1,57 @@
+- name: wzdd
+  is_signal: false
+  samples:
+
+   - name: EXO-RunIISummer20UL18MiniAODv2-01346-1  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 2.563
+
+- name: wzuu
+  is_signal: false
+  samples:
+
+   - name: EXO-RunIISummer20UL18MiniAODv2-01346-2  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 1.995
+
+- name: wzss
+  is_signal: true
+  samples:
+
+   - name: EXO-RunIISummer20UL18MiniAODv2-01346-3  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 2.563
+
+- name: wzcc
+  is_signal: false
+  samples:
+
+   - name: EXO-RunIISummer20UL18MiniAODv2-01346-4  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 1.998
+
+# [XXX]: Cross sections of wzdd, wzuu, wzss, and wzcc are based on EXO-RunIISummer20UL17MiniAODv2-01393.
+
+- name: wjets
+  is_signal: false
+  samples:
+
+   - name: HIG-RunIISummer20UL18MiniAODv2-00220  # WJetsToLNu_Pt-100To250_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 733.1  # [XXX]: This is the value from HIG-RunIISummer20UL17MiniAODv2-00059.
+
+   - name: HIG-RunIISummer20UL18MiniAODv2-00218  # WJetsToLNu_Pt-250To400_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 27.92  # [XXX]: This is the value from HIG-RunIISummer20UL17MiniAODv2-00048.
+
+   - name: HIG-RunIISummer20UL18MiniAODv2-00219  # WJetsToLNu_Pt-400To600_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 3.547  # [XXX]: This is the value from HIG-RunIISummer20UL17MiniAODv2-00049.
+
+   - name: HIG-RunIISummer20UL18MiniAODv2-00009  # WJetsToLNu_Pt-600ToInf_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+     xs: 0.5371  # [XXX]: This is the value from HIG-RunIISummer20UL17MiniAODv2-00047.
+
+- name: zjets
+  is_signal: false
+  samples:
+   - name: HIG-RunIISummer20UL18MiniAODv2-00491  # DY1JetsToLL_M-10to50_MatchEWPDG20_TuneCP5_13TeV-madgraphMLM-pythia8
+   - name: HIG-RunIISummer20UL18MiniAODv2-00492  # DY2JetsToLL_M-10to50_MatchEWPDG20_TuneCP5_13TeV-madgraphMLM-pythia8
+
+- name: ttbar
+  is_signal: false
+  samples:
+   - name: TOP-RunIISummer20UL18MiniAODv2-00104  # TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8
+   - name: TOP-RunIISummer20UL18MiniAODv2-00084  # TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8

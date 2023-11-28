@@ -1,7 +1,6 @@
 #include "CMS_lumi.h"
-#include "CategorizedTreeInput.h"
+#include "TreeInput.h"
 #include "HistOutput.h"
-#include <yaml-cpp/yaml.h>
 #include "fs.h"
 #include <iostream>
 #include <iomanip>
@@ -16,20 +15,19 @@
 
 using namespace std;
 
-class Tree2Hist : public CategorizedTreeInput, public HistOutput {
+class Tree2Hist : public TreeInput, public HistOutput {
 public:
-  Tree2Hist(const char *yamlpath, double lb, double ub)
-    : CategorizedTreeInput("Events", yamlpath), HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str()) {
+  Tree2Hist(double lb, double ub) : TreeInput("Events"), HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str()) {
     add_branch("ak15_ParTMDV2_Hss");        // 0
     add_branch("ak15_ParTMDV2_QCDbb");      // 1
     add_branch("ak15_ParTMDV2_QCDb");       // 2
     add_branch("ak15_ParTMDV2_QCDcc");      // 3
     add_branch("ak15_ParTMDV2_QCDc");       // 4
     add_branch("ak15_ParTMDV2_QCDothers");  // 5
-    size_t ncategory = get_ncategory();
-    for(size_t i = 0; i < ncategory; ++i) {
-      add_curve(get_category(i).c_str());
-    }
+    add_curve("Wlv_Zdd");  // 0
+    add_curve("Wlv_Zuu");  // 1
+    add_curve("Wlv_Zss");  // 2
+    add_curve("Wlv_Zcc");  // 3
     set_boundary(lb, ub);
     bin();
     set_logy(true);
@@ -39,10 +37,10 @@ public:
   ~Tree2Hist() { optimize(); }
 
   virtual void process() override {
-    // Compute weight of current event.
-    YAML::Node sample;
-    get_sample_configuration(&sample);
-    double weight = sample["xs"].as<double>() * 100.0 / sample["nevent"].as<double>();
+    // Extract Zqq flavour.
+    string input_filename = TreeInput::get_filename();
+    int pid = parse_pid(input_filename);
+    if(pid < 1 || pid > 4) return;
 
     // Extract Hss and QCD scores.
     double Hss, QCD = 0.0;
@@ -56,10 +54,27 @@ public:
     HssVSQCD = 1.0 / (1.0 + HssVSQCD);
 
     // Submit result.
-    this->fill_curve(get_icategory(), HssVSQCD, weight);
+    this->fill_curve(pid - 1, HssVSQCD);
   }
 
 private:
+  static int parse_pid(string path) {
+    // *-<PID>_<ID>_tree.root
+    if(path.length() < 12) return 0;
+    path.resize(path.length() - 10);
+
+    // *-<PID>_<ID>
+    size_t pos = path.rfind('_');
+    if(pos == path.npos) return 0;
+    path.resize(pos);
+
+    // *-<PID>
+    pos = path.rfind('-');
+    if(pos == path.npos) return 0;
+    path = path.substr(pos + 1);
+    return atoi(path.c_str());
+  }
+
   static string get_output_filename(double lb, double ub) {
     return "HssVSQCD_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
   }
@@ -68,16 +83,14 @@ private:
     size_t nbin = get_nbin();
     if(nbin == 0) return;
 
-    size_t ncurve = get_ncurve();
     double s_total, b_total = 0.0;
-    vector<YAML::Node> categories(ncurve);
-    vector<Double_t *> integrals(ncurve);
-    vector<Double_t> totals(ncurve);
-    for(size_t i = 0; i < ncurve; ++i) {
-      get_category_configuration(i, &categories[i]);
+    double sf = 1e6 / 7395487;  // [XXX] Scale to 10^6 events (100/fb).
+    vector<Double_t *> integrals(4);
+    vector<Double_t> totals(4);
+    for(size_t i = 0; i < 4; ++i) {
       integrals[i] = get_curve(i)->GetIntegral();
-      totals[i] = get_curve(i)->GetEffectiveEntries();
-      if(categories[i]["is_signal"].as<bool>()) s_total = integrals[i][nbin] * totals[i];
+      totals[i] = get_curve(i)->GetEffectiveEntries() * sf;
+      if(i == 2) s_total = integrals[i][nbin] * totals[i];
       else b_total += integrals[i][nbin] * totals[i];
     }
 
@@ -85,8 +98,8 @@ private:
     significance.reserve(nbin - 1);
     for(size_t left_last_bin = 0; left_last_bin < nbin; ++left_last_bin) {
       double s_left, b_left = 0.0;
-      for(size_t i = 0; i < ncurve; ++i) {
-        if(categories[i]["is_signal"].as<bool>()) s_left = integrals[i][left_last_bin] * totals[i];
+      for(size_t i = 0; i < 4; ++i) {
+        if(i == 2) s_left = integrals[i][left_last_bin] * totals[i];
         else b_left += integrals[i][left_last_bin] * totals[i];
       }
       double s_right = s_total - s_left;
@@ -110,15 +123,15 @@ private:
 
 int main(int argc, char *argv[])
 {
-  if(argc < 5) {
-    cerr << "usage: " << program_invocation_short_name << " <categorization-yaml>"
+  if(argc < 4) {
+    cerr << "usage: " << program_invocation_short_name
          << " <lower-bound> <upper-bound> <dir-to-root-files> [ <more-dir> ... ]" << endl;
     return 1;
   }
-  lumi_sqrtS = dotsplit(basename(argv[1])).first.c_str();
+  lumi_sqrtS = "2018 1L simulation";  // [XXX]
 
-  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]));
-  for(int i = 4; i < argc; ++i) {
+  Tree2Hist eviewer(stod(argv[1]), stod(argv[2]));
+  for(int i = 3; i < argc; ++i) {
     ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
     for(const string &name : lsrst.get_full_names()) eviewer.add_filename(name.c_str());

@@ -177,9 +177,10 @@ bool TreeInput::next()
     }
 
     // Reading failed. Close current file.
-    size_t nread = detail_->local_index + 1;
+    size_t nread = ++detail_->local_index;
     size_t total = detail_->tree->GetEntries();
     clog << "Info: closing file: [" << nread << "/" << total << "] " << get_filename() << endl;
+    on_close_file();
     detail_->tree.reset();
     detail_->file.reset();
     detail_->local_index = -1;
@@ -252,6 +253,7 @@ bool TreeInput::next()
     detail_->branch_current_size = std::move(branch_current_size);
     detail_->branch_elem_size = std::move(branch_elem_size);
     detail_->branch_nelem_max = std::move(branch_nelem_max);
+    if(!on_open_file()) continue;
     return next();
 
     CONTINUE: continue;

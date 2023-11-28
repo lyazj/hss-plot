@@ -11,6 +11,8 @@ public:
 
   // Step forward.
   virtual bool next() override;
+  virtual bool on_open_file() { return true; }
+  virtual void on_close_file() { }
 
   // Current position.
   const char *get_filename() const;
