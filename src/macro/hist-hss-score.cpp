@@ -42,7 +42,7 @@ public:
     // Compute weight of current event.
     YAML::Node sample;
     get_sample_configuration(&sample);
-    double weight = sample["xs"].as<double>() * 100.0 / sample["nevent"].as<double>();
+    double weight = sample["xs"].as<double>() * 100.0e3 / sample["nevent"].as<double>();
 
     // Extract Hss and QCD scores.
     double Hss, QCD = 0.0;
@@ -76,7 +76,7 @@ private:
     for(size_t i = 0; i < ncurve; ++i) {
       get_category_configuration(i, &categories[i]);
       integrals[i] = get_curve(i)->GetIntegral();
-      totals[i] = get_curve(i)->GetEffectiveEntries();
+      totals[i] = get_curve(i)->GetSumOfWeights();
       if(categories[i]["is_signal"].as<bool>()) s_total = integrals[i][nbin] * totals[i];
       else b_total += integrals[i][nbin] * totals[i];
     }
