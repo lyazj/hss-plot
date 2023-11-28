@@ -121,10 +121,12 @@ size_t CategorizedTreeInput::get_ncategory() const
   return detail_->yaml.size();
 }
 
-string CategorizedTreeInput::get_category(size_t i) const
+const char *CategorizedTreeInput::get_category(size_t i) const
 {
+  static string category;
   if(i >= detail_->yaml.size()) return nullptr;
-  return detail_->yaml[i]["name"].as<string>();
+  category = detail_->yaml[i]["name"].as<string>();
+  return category.c_str();
 }
 
 bool CategorizedTreeInput::get_category_configuration(size_t i,
@@ -135,7 +137,7 @@ bool CategorizedTreeInput::get_category_configuration(size_t i,
   return true;
 }
 
-bool CategorizedTreeInput::get_category_configuration(const string &category,
+bool CategorizedTreeInput::get_category_configuration(const char *category,
     YAML::Node *configuration) const
 {
   auto iter = detail_->category_index.find(category);
@@ -150,11 +152,13 @@ size_t CategorizedTreeInput::get_nsample(size_t i) const
   return detail_->yaml[i]["samples"].size();
 }
 
-string CategorizedTreeInput::get_sample(size_t icategory, size_t isample) const
+const char *CategorizedTreeInput::get_sample(size_t icategory, size_t isample) const
 {
+  static string sample;
   if(icategory >= detail_->yaml.size()) return nullptr;
   if(isample >= detail_->yaml[icategory]["samples"].size()) return nullptr;
-  return detail_->yaml[icategory]["samples"][isample]["name"].as<string>();
+  sample = detail_->yaml[icategory]["samples"][isample]["name"].as<string>();
+  return sample.c_str();
 }
 
 bool CategorizedTreeInput::get_sample_configuration(size_t icategory, size_t isample,
@@ -162,12 +166,12 @@ bool CategorizedTreeInput::get_sample_configuration(size_t icategory, size_t isa
 {
   if(icategory >= detail_->yaml.size()) return false;
   if(isample >= detail_->yaml[icategory].size()) return false;
-  if(sample_configuration) *sample_configuration = detail_->yaml[icategory][isample];
+  if(sample_configuration) *sample_configuration = detail_->yaml[icategory]["samples"][isample];
   if(category_configuration) *category_configuration = detail_->yaml[icategory];
   return true;
 }
 
-bool CategorizedTreeInput::get_sample_configuration(const string &sample,
+bool CategorizedTreeInput::get_sample_configuration(const char *sample,
     YAML::Node *sample_configuration, YAML::Node *category_configuration) const
 {
   auto iter = detail_->sample_index.find(sample);
@@ -177,16 +181,22 @@ bool CategorizedTreeInput::get_sample_configuration(const string &sample,
   return true;
 }
 
-string CategorizedTreeInput::get_category() const
+const char *CategorizedTreeInput::get_category() const
 {
-  YAML::Node *category = detail_->current_category;
-  return category ? (*category)["name"].as<string>() : nullptr;
+  static string category;
+  YAML::Node *node = detail_->current_category;
+  if(!node) return nullptr;
+  category = (*node)["name"].as<string>();
+  return category.c_str();
 }
 
-string CategorizedTreeInput::get_sample() const
+const char *CategorizedTreeInput::get_sample() const
 {
-  YAML::Node *sample = detail_->current_sample;
-  return sample ? (*sample)["name"].as<string>() : nullptr;
+  static string sample;
+  YAML::Node *node = detail_->current_sample;
+  if(!node) return nullptr;
+  sample = (*node)["name"].as<string>();
+  return sample.c_str();
 }
 
 size_t CategorizedTreeInput::get_icategory() const
@@ -217,14 +227,14 @@ bool CategorizedTreeInput::get_sample_configuration(YAML::Node *configuration) c
   return true;
 }
 
-size_t CategorizedTreeInput::get_category_nevent(const string &category) const
+size_t CategorizedTreeInput::get_category_nevent(const char *category) const
 {
   YAML::Node configuration;
   if(!get_category_configuration(category, &configuration)) return 0;
   return configuration["_runtime_nevent"].as<size_t>();
 }
 
-size_t CategorizedTreeInput::get_sample_nevent(const string &sample) const
+size_t CategorizedTreeInput::get_sample_nevent(const char *sample) const
 {
   YAML::Node configuration;
   if(!get_sample_configuration(sample, &configuration)) return 0;

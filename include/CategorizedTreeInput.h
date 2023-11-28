@@ -1,6 +1,5 @@
 #pragma once
 #include "TreeInput.h"
-#include <string>
 
 namespace YAML { class Node; }
 
@@ -18,16 +17,16 @@ public:
 
   // Configuration.
   size_t get_ncategory() const;
-  std::string get_category(size_t) const;
+  const char *get_category(size_t) const;
   bool get_category_configuration(size_t, YAML::Node *) const;
-  bool get_category_configuration(const std::string &, YAML::Node *) const;
+  bool get_category_configuration(const char *, YAML::Node *) const;
   size_t get_nsample(size_t) const;
-  std::string get_sample(size_t, size_t) const;
+  const char *get_sample(size_t, size_t) const;
   bool get_sample_configuration(size_t, size_t, YAML::Node *, YAML::Node *category_configuration = nullptr) const;
-  bool get_sample_configuration(const std::string &, YAML::Node *, YAML::Node *category_configuration = nullptr) const;
+  bool get_sample_configuration(const char *, YAML::Node *, YAML::Node *category_configuration = nullptr) const;
 
-  std::string get_category() const;
-  std::string get_sample() const;
+  const char *get_category() const;
+  const char *get_sample() const;
   size_t get_icategory() const;
   size_t get_isample() const;
   bool get_category_configuration(YAML::Node *) const;
@@ -35,8 +34,8 @@ public:
 
   // Number of events per category/sample.
   // May NOT be up-to-date before closing a file.
-  size_t get_category_nevent(const std::string &) const;
-  size_t get_sample_nevent(const std::string &) const;
+  size_t get_category_nevent(const char *) const;
+  size_t get_sample_nevent(const char *) const;
 
 protected:
   char *yamlpath_;

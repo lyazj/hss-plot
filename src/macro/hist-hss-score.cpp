@@ -19,16 +19,25 @@ using namespace std;
 class Tree2Hist : public CategorizedTreeInput, public HistOutput {
 public:
   Tree2Hist(const char *yamlpath, double lb, double ub)
-    : CategorizedTreeInput("Events", yamlpath), HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str()) {
+    : CategorizedTreeInput("Events", yamlpath)
+    , HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str())
+  {
     add_branch("ak15_ParTMDV2_Hss");        // 0
     add_branch("ak15_ParTMDV2_QCDbb");      // 1
     add_branch("ak15_ParTMDV2_QCDb");       // 2
     add_branch("ak15_ParTMDV2_QCDcc");      // 3
     add_branch("ak15_ParTMDV2_QCDc");       // 4
     add_branch("ak15_ParTMDV2_QCDothers");  // 5
+    double xs = 0.0;
     size_t ncategory = get_ncategory();
     for(size_t i = 0; i < ncategory; ++i) {
-      add_curve(get_category(i).c_str());
+      size_t nsample = get_nsample(i);
+      for(size_t j = 0; j < nsample; ++j) {
+        YAML::Node sample; get_sample_configuration(i, j, &sample);
+        cout << sample << endl;
+        xs += sample["xs"].as<double>();
+      }
+      add_curve((get_category(i) + (" (" + to_string(xs) + "/fb)")).c_str());
     }
     set_boundary(lb, ub);
     bin();
