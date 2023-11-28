@@ -1,4 +1,5 @@
 #include "CategorizedTreeInput.h"
+#include "fs.h"
 #include <yaml-cpp/yaml.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,10 +43,10 @@ public:
 
         sample_name_minlen = min(sample_name_minlen, sample_name.length());
         sample_name_maxlen = max(sample_name_maxlen, sample_name.length());
-        sample["_runtime_id"] = isample;
+        sample["_runtime_id"] = isample++;
         sample["_runtime_nevent"] = 0;
       }
-      category["_runtime_id"] = icategory;
+      category["_runtime_id"] = icategory++;
       category["_runtime_nevent"] = 0;
     }
   }
@@ -60,9 +61,10 @@ public:
   }
 
   bool match_filename(const char *filename_in) {
-    string filename = filename_in;
-    size_t minlen = min(sample_name_minlen, filename.length());
-    size_t maxlen = max(sample_name_maxlen, filename.length());
+    string filename = basename(filename_in);
+    size_t minlen = sample_name_minlen;
+    size_t maxlen = min(sample_name_maxlen, filename.length());
+    if(maxlen < minlen) return false;
     for(;;) {
       auto sample_iter = sample_index.find(filename.substr(0, maxlen));
       if(sample_iter != sample_index.end()) {
@@ -95,16 +97,23 @@ CategorizedTreeInput::~CategorizedTreeInput()
   free(yamlpath_);
 }
 
-bool CategorizedTreeInput::on_open_file()
+bool CategorizedTreeInput::on_new_file(const char *filename)
 {
-  return detail_->match_filename(get_filename());
+  return detail_->match_filename(filename);
+}
+
+void CategorizedTreeInput::on_open_file()
+{
+  // empty
 }
 
 void CategorizedTreeInput::on_close_file()
 {
   size_t nevent = get_local_index();
-  (*detail_->current_category)["_runtime_nevent"] = (*detail_->current_category)["_runtime_nevent"].as<size_t>() + nevent;
-  (*detail_->current_sample)["_runtime_nevent"] = (*detail_->current_sample)["_runtime_nevent"].as<size_t>() + nevent;
+  (*detail_->current_category)["_runtime_nevent"] =
+    (*detail_->current_category)["_runtime_nevent"].as<size_t>() + nevent;
+  (*detail_->current_sample)["_runtime_nevent"] =
+    (*detail_->current_sample)["_runtime_nevent"].as<size_t>() + nevent;
 }
 
 size_t CategorizedTreeInput::get_ncategory() const

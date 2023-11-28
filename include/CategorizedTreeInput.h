@@ -12,7 +12,8 @@ public:
   const char *get_yamlpath() const { return yamlpath_; }
 
   // Step forward.
-  virtual bool on_open_file() override;
+  virtual bool on_new_file(const char *) override;
+  virtual void on_open_file() override;
   virtual void on_close_file() override;
 
   // Configuration.

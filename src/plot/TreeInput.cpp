@@ -38,7 +38,7 @@ public:
   size_t local_index;  // -1 if not opened
   size_t global_index;  // <total events read> if at the end
   unique_ptr<TFile> file;
-  unique_ptr<TTree> tree;
+  TTree *tree;
   vector<string> branch_names;
   vector<TBranch *> branches;
   vector<unique_ptr<void, function<void(void *)>>> branch_data;
@@ -66,6 +66,7 @@ TreeInput::TreeInput(const char *name)
   detail_->ifilename = -1;
   detail_->local_index = -1;
   detail_->global_index = -1;
+  detail_->tree = nullptr;
 }
 
 TreeInput::~TreeInput()
@@ -181,7 +182,7 @@ bool TreeInput::next()
     size_t total = detail_->tree->GetEntries();
     clog << "Info: closing file: [" << nread << "/" << total << "] " << get_filename() << endl;
     on_close_file();
-    detail_->tree.reset();
+    detail_->tree = nullptr;
     detail_->file.reset();
     detail_->local_index = -1;
   }
@@ -193,6 +194,10 @@ bool TreeInput::next()
   for(;;) {
     const char *filename = get_filename(++detail_->ifilename);
     if(filename == nullptr) break;
+    if(!on_new_file(filename)) {
+      clog << "Info: skipping file: " << get_filename() << endl;
+      continue;
+    }
     clog << "Info: opening file: " << get_filename() << endl;
 
     unique_ptr<TFile> file(new TFile(filename));
@@ -201,7 +206,7 @@ bool TreeInput::next()
       continue;
     }
 
-    unique_ptr<TTree> tree(dynamic_cast<TTree *>(file->Get(name_)));
+    auto tree = dynamic_cast<TTree *>(file->Get(name_));
     if(!tree) {
       cerr << "Warning: skipping empty file: " << filename << endl;
       continue;
@@ -253,7 +258,7 @@ bool TreeInput::next()
     detail_->branch_current_size = std::move(branch_current_size);
     detail_->branch_elem_size = std::move(branch_elem_size);
     detail_->branch_nelem_max = std::move(branch_nelem_max);
-    if(!on_open_file()) continue;
+    on_open_file();
     return next();
 
     CONTINUE: continue;
