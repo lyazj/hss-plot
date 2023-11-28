@@ -55,9 +55,13 @@ endif()
 add_compile_options(-Wall -Wshadow -Wextra)
 add_compile_definitions(_GNU_SOURCE)
 
+option(YAML_BUILD_SHARED_LIBS "Build yaml-cpp shared library" ON)
+add_subdirectory(third_party/yaml-cpp)
+include_directories(third_party/yaml-cpp/include)
+
 file(GLOB SOURCE_FILES src/plot/*.cpp)
 add_library(plot SHARED ${SOURCE_FILES})
-target_link_libraries(plot PUBLIC ${ROOT_CONFIG_LIBS} ASImage)
+target_link_libraries(plot PUBLIC ${ROOT_CONFIG_LIBS} ASImage yaml-cpp)
 
 file(GLOB SOURCE_FILES src/macro/*.cpp src/example/*.cpp)
 foreach(SOURCE_FILE ${SOURCE_FILES})

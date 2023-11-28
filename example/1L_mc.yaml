@@ -1,0 +1,25 @@
+wzdd:
+ - EXO-RunIISummer20UL18MiniAODv2-01346-1  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+
+wzuu:
+ - EXO-RunIISummer20UL18MiniAODv2-01346-2  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+
+wzss:
+ - EXO-RunIISummer20UL18MiniAODv2-01346-3  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+
+wzcc:
+ - EXO-RunIISummer20UL18MiniAODv2-01346-4  # WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
+
+wjets:
+ - HIG-RunIISummer20UL18MiniAODv2-00220  # WJetsToLNu_Pt-100To250_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+ - HIG-RunIISummer20UL18MiniAODv2-00218  # WJetsToLNu_Pt-250To400_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+ - HIG-RunIISummer20UL18MiniAODv2-00219  # WJetsToLNu_Pt-400To600_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+ - HIG-RunIISummer20UL18MiniAODv2-00009  # WJetsToLNu_Pt-600ToInf_MatchEWPDG20_TuneCP5_13TeV-amcatnloFXFX-pythia8
+
+zjets:
+ - HIG-RunIISummer20UL18MiniAODv2-00491  # DY1JetsToLL_M-10to50_MatchEWPDG20_TuneCP5_13TeV-madgraphMLM-pythia8
+ - HIG-RunIISummer20UL18MiniAODv2-00492  # DY2JetsToLL_M-10to50_MatchEWPDG20_TuneCP5_13TeV-madgraphMLM-pythia8
+
+ttbar:
+ - TOP-RunIISummer20UL18MiniAODv2-00104  # TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8
+ - TOP-RunIISummer20UL18MiniAODv2-00084  # TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8
