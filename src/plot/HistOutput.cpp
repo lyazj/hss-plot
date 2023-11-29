@@ -54,7 +54,10 @@ public:
 };
 
 HistOutput::HistOutput(const char *xtitle, const char *ytitle, const char *filename)
-  : xtitle_(strdup(xtitle)), ytitle_(strdup(ytitle)), filename_(strdup(filename)), legend_pos_{0.65, 0.95, 0.75, 0.9}
+  : xtitle_(strdup(xtitle)), ytitle_(strdup(ytitle))
+  , filename_(strdup(filename)), legend_pos_{0.65, 0.95, 0.75, 0.9}
+  , logx_(false), logy_(false), rangex_(false), rangey_(false)
+  , xmin_(0.0), xmax_(0.0), ymin_(0.0), ymax_(0.0)
 {
   detail_ = new Detail;
   detail_->canvas.reset(new TCanvas);
@@ -172,6 +175,8 @@ bool HistOutput::save() const
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin();
     TH1 *curve = detail_->curves[i].get();
+    if(rangex_) curve->GetXaxis()->SetRangeUser(xmin_, xmax_);
+    if(rangey_) curve->GetYaxis()->SetRangeUser(ymin_, ymax_);
     curve->SetLineColor(i + 1);
     string options = "HIST";
     if(i) options += ",SAME";

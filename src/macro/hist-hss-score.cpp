@@ -36,10 +36,10 @@ public:
     set_boundary(lb, ub);
     bin();
     set_logy(true);
-    set_legend_pos(0.3, 0.3, 0.15, 0.15);
+    set_legend_pos(0.65, 0.95, 0.75, 0.9);
   }
 
-  ~Tree2Hist() { optimize(); add_xs_and_nb_info(); }
+  ~Tree2Hist() { optimize(); post_process(); }
 
   virtual void process() override {
     // Compute weight of current event.
@@ -110,25 +110,39 @@ private:
     return sqrt(2 * ((s + b) * log(1 + s / b) - s));
   }
 
-  void add_xs_and_nb_info() const {
+  void post_process() {
     size_t ncurve = get_ncurve();
+    double ymax = 0.0;
     for(size_t i = 0; i < ncurve; ++i) {
+      // Compute total xs and nb for each category.
       double xs = 0.0;
-      size_t nb = 0;
+      size_t nb_orig = 0;
+      size_t nb_read = 0;
       size_t nsample = get_nsample(i);
       for(size_t j = 0; j < nsample; ++j) {
         YAML::Node sample; get_sample_configuration(i, j, &sample);
         xs += sample["xs"].as<double>();
-        nb += get_sample_nevent(i, j);
+        nb_orig += sample["nevent"].as<size_t>();
+        nb_read += get_sample_nevent(i, j);
       }
       TH1 *curve = get_curve(i);
+
+      // Add xs and nb info.
       ostringstream oss;
-      oss << " (" << nb << " events scaled to "
-          << scientific << setprecision(3) << xs << "/fb)";
+      oss << " (" << nb_read << "/" << nb_orig << " events scaled to "
+          << scientific << setprecision(3) << xs << " pb)";
       string title = curve->GetTitle();
       title += oss.str();
       curve->SetTitle(title.c_str());
+
+      // Compute maximum bin height.
+      size_t nbin = get_nbin();
+      for(size_t j = 1; j <= nbin; ++j) {
+        ymax = max(ymax, curve->GetBinContent(j));
+      }
     }
+    // Adjust y-range.
+    set_rangey(0.8, ymax * 1.2);
   }
 };
 
@@ -139,7 +153,7 @@ int main(int argc, char *argv[])
          << " <lower-bound> <upper-bound> <dir-to-root-files> [ <more-dir> ... ]" << endl;
     return 1;
   }
-  lumi_sqrtS = dotsplit(basename(argv[1])).first.c_str();
+  lumi_sqrtS = (dotsplit(basename(argv[1])).first + " 100/fb").c_str();
 
   Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]));
   for(int i = 4; i < argc; ++i) {

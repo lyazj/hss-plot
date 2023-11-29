@@ -40,6 +40,8 @@ public:
   bool get_logx() { return logx_; }
   void set_logy(bool enable) { logy_ = enable; }
   bool get_logy() { return logy_; }
+  void set_rangex(double min, double max) { rangex_ = true; xmin_ = min, xmax_ = max; }
+  void set_rangey(double min, double max) { rangey_ = true; ymin_ = min, ymax_ = max; }
 
   // Draw and save histograms.
   bool save() const;
@@ -49,6 +51,7 @@ protected:
   char *ytitle_;
   char *filename_;
   struct { double xl, xh, yl, yh; } legend_pos_;
-  bool logx_, logy_;
+  bool logx_, logy_, rangex_, rangey_;
+  double xmin_, xmax_, ymin_, ymax_;
   class Detail; Detail *detail_;
 };
