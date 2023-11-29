@@ -25,7 +25,7 @@ static bool expand_buffer_init(void *&buf, size_t &bufsiz, size_t maxsiz, size_t
   if(bufsiz >= maxsiz) return true;
   void *newbuf = realloc(buf, maxsiz);
   if(newbuf == nullptr) return false;
-  memset(newbuf, 0, initsiz);
+  memset(newbuf, 0, min(maxsiz, initsiz));
   buf = newbuf;
   bufsiz = maxsiz;
   return true;
