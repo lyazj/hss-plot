@@ -41,7 +41,7 @@ public:
 
   ~Tree2Hist() { optimize(); post_process(); }
 
-  virtual void process() override {
+  virtual bool process() override {
     // Compute weight of current event.
     YAML::Node sample;
     get_sample_configuration(&sample);
@@ -53,13 +53,14 @@ public:
     for(size_t i = 1; i <= 5; ++i) QCD += *(float *)get_branch_data(i);
 
     // Compute Hss significance relevant to QCD.
-    if(Hss < 0 || QCD < 0) return;
+    if(Hss < 0 || QCD < 0) return false;
     double HssVSQCD = QCD / Hss;
-    if(std::isnan(HssVSQCD)) return;
+    if(std::isnan(HssVSQCD)) return false;
     HssVSQCD = 1.0 / (1.0 + HssVSQCD);
 
     // Submit result.
     this->fill_curve(get_icategory(), HssVSQCD, weight);
+    return true;
   }
 
 private:

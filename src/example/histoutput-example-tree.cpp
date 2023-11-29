@@ -10,8 +10,9 @@ public:
     bin();
   }
 
-  virtual void process() override {
+  virtual bool process() override {
     fill_curve(0, *(float *)get_branch_data(0), 1.0);
+    return true;
   }
 };
 

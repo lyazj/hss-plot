@@ -19,7 +19,7 @@ public:
   TH1 *get_curve(size_t) const;
   const char *get_curve_title(size_t) const;
   bool fill_curve(size_t, double value, double weight = 1.0) const;
-  virtual void process() override = 0;
+  virtual bool process() override = 0;
 
   // Boundary and binning control.
   void get_boundary(double &, double &) const;
