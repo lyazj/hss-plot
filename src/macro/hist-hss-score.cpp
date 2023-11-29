@@ -3,6 +3,7 @@
 #include "HistOutput.h"
 #include <yaml-cpp/yaml.h>
 #include "fs.h"
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -28,15 +29,9 @@ public:
     add_branch("ak15_ParTMDV2_QCDcc");      // 3
     add_branch("ak15_ParTMDV2_QCDc");       // 4
     add_branch("ak15_ParTMDV2_QCDothers");  // 5
-    double xs = 0.0;
     size_t ncategory = get_ncategory();
     for(size_t i = 0; i < ncategory; ++i) {
-      size_t nsample = get_nsample(i);
-      for(size_t j = 0; j < nsample; ++j) {
-        YAML::Node sample; get_sample_configuration(i, j, &sample);
-        xs += sample["xs"].as<double>();
-      }
-      add_curve((get_category(i) + (" (" + to_string(xs) + "/fb)")).c_str());
+      add_curve(get_category(i).c_str());
     }
     set_boundary(lb, ub);
     bin();
@@ -44,7 +39,7 @@ public:
     set_legend_pos(0.3, 0.3, 0.15, 0.15);
   }
 
-  ~Tree2Hist() { optimize(); }
+  ~Tree2Hist() { optimize(); add_xs_and_nb_info(); }
 
   virtual void process() override {
     // Compute weight of current event.
@@ -113,6 +108,27 @@ private:
 
   static double get_signal_significance(double s, double b) {
     return sqrt(2 * ((s + b) * log(1 + s / b) - s));
+  }
+
+  void add_xs_and_nb_info() const {
+    size_t ncurve = get_ncurve();
+    for(size_t i = 0; i < ncurve; ++i) {
+      double xs = 0.0;
+      size_t nb = 0;
+      size_t nsample = get_nsample(i);
+      for(size_t j = 0; j < nsample; ++j) {
+        YAML::Node sample; get_sample_configuration(i, j, &sample);
+        xs += sample["xs"].as<double>();
+        nb += get_sample_nevent(i, j);
+      }
+      TH1 *curve = get_curve(i);
+      ostringstream oss;
+      oss << " (" << nb << " events scaled to "
+          << scientific << setprecision(3) << xs << "/fb)";
+      string title = curve->GetTitle();
+      title += oss.str();
+      curve->SetTitle(title.c_str());
+    }
   }
 };
 
