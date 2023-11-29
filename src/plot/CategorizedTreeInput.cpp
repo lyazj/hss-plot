@@ -121,28 +121,24 @@ size_t CategorizedTreeInput::get_ncategory() const
   return detail_->yaml.size();
 }
 
-const char *CategorizedTreeInput::get_category(size_t i) const
+string CategorizedTreeInput::get_category(size_t i) const
 {
-  static string category;
-  if(i >= detail_->yaml.size()) return nullptr;
-  category = detail_->yaml[i]["name"].as<string>();
-  return category.c_str();
+  if(i >= detail_->yaml.size()) return "";
+  return detail_->yaml[i]["name"].as<string>();
 }
 
-bool CategorizedTreeInput::get_category_configuration(size_t i,
-    YAML::Node *configuration) const
+bool CategorizedTreeInput::get_category_configuration(size_t i, YAML::Node *node) const
 {
   if(i >= detail_->yaml.size()) return false;
-  if(configuration) *configuration = detail_->yaml[i];
+  if(node) *node = detail_->yaml[i];
   return true;
 }
 
-bool CategorizedTreeInput::get_category_configuration(const char *category,
-    YAML::Node *configuration) const
+bool CategorizedTreeInput::get_category_configuration(const string &category, YAML::Node *node) const
 {
   auto iter = detail_->category_index.find(category);
   if(iter == detail_->category_index.end()) return false;
-  if(configuration) *configuration = iter->second;
+  if(node) *node = iter->second;
   return true;
 }
 
@@ -152,51 +148,46 @@ size_t CategorizedTreeInput::get_nsample(size_t i) const
   return detail_->yaml[i]["samples"].size();
 }
 
-const char *CategorizedTreeInput::get_sample(size_t icategory, size_t isample) const
+string CategorizedTreeInput::get_sample(size_t icategory, size_t isample) const
 {
-  static string sample;
-  if(icategory >= detail_->yaml.size()) return nullptr;
-  if(isample >= detail_->yaml[icategory]["samples"].size()) return nullptr;
-  sample = detail_->yaml[icategory]["samples"][isample]["name"].as<string>();
-  return sample.c_str();
+  if(icategory >= detail_->yaml.size()) return "";
+  if(isample >= detail_->yaml[icategory]["samples"].size()) return "";
+  return detail_->yaml[icategory]["samples"][isample]["name"].as<string>();
 }
 
 bool CategorizedTreeInput::get_sample_configuration(size_t icategory, size_t isample,
-    YAML::Node *sample_configuration, YAML::Node *category_configuration) const
+    YAML::Node *sample_node, YAML::Node *category_node) const
 {
   if(icategory >= detail_->yaml.size()) return false;
-  if(isample >= detail_->yaml[icategory].size()) return false;
-  if(sample_configuration) *sample_configuration = detail_->yaml[icategory]["samples"][isample];
-  if(category_configuration) *category_configuration = detail_->yaml[icategory];
+  YAML::Node node = detail_->yaml[icategory];
+  if(isample >= node["samples"].size()) return false;
+  if(sample_node) *sample_node = node["samples"][isample];
+  if(category_node) *category_node = node;
   return true;
 }
 
-bool CategorizedTreeInput::get_sample_configuration(const char *sample,
-    YAML::Node *sample_configuration, YAML::Node *category_configuration) const
+bool CategorizedTreeInput::get_sample_configuration(const string &sample,
+    YAML::Node *sample_node, YAML::Node *category_node) const
 {
   auto iter = detail_->sample_index.find(sample);
   if(iter == detail_->sample_index.end()) return false;
-  if(sample_configuration) *sample_configuration = iter->second.first;
-  if(category_configuration) *category_configuration = iter->second.second;
+  if(sample_node) *sample_node = iter->second.first;
+  if(category_node) *category_node = iter->second.second;
   return true;
 }
 
-const char *CategorizedTreeInput::get_category() const
+string CategorizedTreeInput::get_category() const
 {
-  static string category;
   YAML::Node *node = detail_->current_category;
-  if(!node) return nullptr;
-  category = (*node)["name"].as<string>();
-  return category.c_str();
+  if(!node) return "";
+  return (*node)["name"].as<string>();
 }
 
-const char *CategorizedTreeInput::get_sample() const
+string CategorizedTreeInput::get_sample() const
 {
-  static string sample;
   YAML::Node *node = detail_->current_sample;
-  if(!node) return nullptr;
-  sample = (*node)["name"].as<string>();
-  return sample.c_str();
+  if(!node) return "";
+  return (*node)["name"].as<string>();
 }
 
 size_t CategorizedTreeInput::get_icategory() const
@@ -211,32 +202,44 @@ size_t CategorizedTreeInput::get_isample() const
   return sample ? (*sample)["_runtime_id"].as<size_t>() : -1;
 }
 
-bool CategorizedTreeInput::get_category_configuration(YAML::Node *configuration) const
+bool CategorizedTreeInput::get_category_configuration(YAML::Node *node) const
 {
-  YAML::Node *category = detail_->current_category;
-  if(!category) return false;
-  if(configuration) *configuration = *category;
+  if(!detail_->current_category) return false;
+  if(node) *node = *detail_->current_category;
   return true;
 }
 
-bool CategorizedTreeInput::get_sample_configuration(YAML::Node *configuration) const
+bool CategorizedTreeInput::get_sample_configuration(YAML::Node *node) const
 {
-  YAML::Node *sample = detail_->current_sample;
-  if(!sample) return false;
-  if(configuration) *configuration = *sample;
+  if(!detail_->current_sample) return false;
+  if(node) *node = *detail_->current_sample;
   return true;
 }
 
-size_t CategorizedTreeInput::get_category_nevent(const char *category) const
+size_t CategorizedTreeInput::get_category_nevent(const string &category) const
 {
   YAML::Node configuration;
   if(!get_category_configuration(category, &configuration)) return 0;
   return configuration["_runtime_nevent"].as<size_t>();
 }
 
-size_t CategorizedTreeInput::get_sample_nevent(const char *sample) const
+size_t CategorizedTreeInput::get_sample_nevent(const string &sample) const
 {
   YAML::Node configuration;
   if(!get_sample_configuration(sample, &configuration)) return 0;
+  return configuration["_runtime_nevent"].as<size_t>();
+}
+
+size_t CategorizedTreeInput::get_category_nevent(size_t icategory) const
+{
+  YAML::Node configuration;
+  if(!get_category_configuration(icategory, &configuration)) return 0;
+  return configuration["_runtime_nevent"].as<size_t>();
+}
+
+size_t CategorizedTreeInput::get_sample_nevent(size_t icategory, size_t isample) const
+{
+  YAML::Node configuration;
+  if(!get_sample_configuration(icategory, isample, &configuration)) return 0;
   return configuration["_runtime_nevent"].as<size_t>();
 }

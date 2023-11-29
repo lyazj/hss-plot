@@ -34,7 +34,6 @@ public:
       size_t nsample = get_nsample(i);
       for(size_t j = 0; j < nsample; ++j) {
         YAML::Node sample; get_sample_configuration(i, j, &sample);
-        cout << sample << endl;
         xs += sample["xs"].as<double>();
       }
       add_curve((get_category(i) + (" (" + to_string(xs) + "/fb)")).c_str());
