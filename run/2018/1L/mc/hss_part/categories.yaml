@@ -25,7 +25,7 @@
       xs-name: "https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR"
       xs: 9.725e-5  # [XXX] assumes BR=2e-4
 
-- name: wzdd
+- name: wzqq
   samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-1
@@ -34,26 +34,17 @@
       xs-name: EXO-RunIISummer20UL17MiniAODv2-01393-1
       xs: 2.563
 
-- name: wzuu
-  samples:
-
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-2
       dataset: WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
       nevent: 1617824
       xs-name: EXO-RunIISummer20UL17MiniAODv2-01393-2
       xs: 1.995
 
-- name: wzss
-  samples:
-
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-3
       dataset: WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
       nevent: 2078629
       xs-name: EXO-RunIISummer20UL17MiniAODv2-01393-3
       xs: 2.563
-
-- name: wzcc
-  samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-4
       dataset: WZTo1L1Nu2Q_4f_TuneCP5_13TeV-amcatnloFXFX-pythia8
