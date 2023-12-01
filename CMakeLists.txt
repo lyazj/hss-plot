@@ -55,7 +55,7 @@ endif()
 add_compile_options(-Wall -Wshadow -Wextra)
 add_compile_definitions(_GNU_SOURCE)
 
-execute_process(COMMAND sh -c "git submodule init && git submodule update" RESULT_VARIABLE GIT_RESULT)
+execute_process(COMMAND sh -c "cd '${CMAKE_SOURCE_DIR}' && git submodule init && git submodule update" RESULT_VARIABLE GIT_RESULT)
 if(NOT ${GIT_RESULT} EQUAL 0)
     message(FATAL_ERROR "git submodule failed: ${ROOT_CONFIG_RESULT}")
 endif()

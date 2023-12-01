@@ -1,5 +1,4 @@
 - name: wzdd
-  is_signal: false
   samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-1
@@ -9,7 +8,6 @@
       xs: 2.563
 
 - name: wzuu
-  is_signal: false
   samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-2
@@ -19,7 +17,6 @@
       xs: 1.995
 
 - name: wzss
-  is_signal: true
   samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-3
@@ -29,7 +26,6 @@
       xs: 2.563
 
 - name: wzcc
-  is_signal: false
   samples:
 
     - name: EXO-RunIISummer20UL18MiniAODv2-01346-4
@@ -39,7 +35,6 @@
       xs: 1.998
 
 - name: wjets
-  is_signal: false
   samples:
 
     - name: HIG-RunIISummer20UL18MiniAODv2-00220
@@ -67,7 +62,6 @@
       xs: 0.5371
 
 - name: zjets
-  is_signal: false
   samples:
 
     - name: HIG-RunIISummer20UL18MiniAODv2-00491
@@ -83,7 +77,6 @@
       xs: 318.2
 
 - name: ttbar
-  is_signal: false
   samples:
 
     - name: TOP-RunIISummer20UL18MiniAODv2-00104
