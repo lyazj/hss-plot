@@ -13,22 +13,27 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <ctype.h>
 #include <TH1.h>
 
 using namespace std;
 
 class Tree2Hist : public CategorizedTreeInput, public HistOutput {
 public:
-  Tree2Hist(const char *yamlpath, double lb, double ub)
+  Tree2Hist(const char *yamlpath, double lb, double ub,
+      const string &branch_prefix, const string &signal_branch_suffix,
+      const string &signal_category)
     : CategorizedTreeInput("Events", yamlpath)
-    , HistOutput("HssVSQCD", "number", get_output_filename(lb, ub).c_str())
+    , HistOutput(get_output_ytitle(signal_branch_suffix).c_str(), "number",
+        get_output_filename(signal_branch_suffix, lb, ub).c_str())
+    , signal_category_(signal_category)
   {
-    add_branch("ak15_ParTMDV2_Hss");        // 0
-    add_branch("ak15_ParTMDV2_QCDbb");      // 1
-    add_branch("ak15_ParTMDV2_QCDb");       // 2
-    add_branch("ak15_ParTMDV2_QCDcc");      // 3
-    add_branch("ak15_ParTMDV2_QCDc");       // 4
-    add_branch("ak15_ParTMDV2_QCDothers");  // 5
+    add_branch((branch_prefix + signal_branch_suffix).c_str());  // 0
+    add_branch((branch_prefix + "QCDbb").c_str());               // 1
+    add_branch((branch_prefix + "QCDb").c_str());                // 2
+    add_branch((branch_prefix + "QCDcc").c_str());               // 3
+    add_branch((branch_prefix + "QCDc").c_str());                // 4
+    add_branch((branch_prefix + "QCDothers").c_str());           // 5
     size_t ncategory = get_ncategory();
     for(size_t i = 0; i < ncategory; ++i) {
       add_curve(get_category(i).c_str());
@@ -64,8 +69,14 @@ public:
   }
 
 private:
-  static string get_output_filename(double lb, double ub) {
-    return "HssVSQCD_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
+  string signal_category_;
+
+  static string get_output_ytitle(const string &signal_branch_suffix) {
+    return signal_branch_suffix + "VSQCD";
+  }
+
+  static string get_output_filename(const string &signal_branch_suffix, double lb, double ub) {
+    return get_output_ytitle(signal_branch_suffix) + "_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
   }
 
   void optimize() const {
@@ -74,14 +85,14 @@ private:
 
     size_t ncurve = get_ncurve();
     double s_total, b_total = 0.0;
-    vector<YAML::Node> categories(ncurve);
+    vector<char> is_signal(ncurve);
     vector<Double_t *> integrals(ncurve);
     vector<Double_t> totals(ncurve);
     for(size_t i = 0; i < ncurve; ++i) {
-      get_category_configuration(i, &categories[i]);
+      is_signal[i] = get_category(i) == signal_category_;
       integrals[i] = get_curve(i)->GetIntegral();
       totals[i] = get_curve(i)->GetSumOfWeights();
-      if(categories[i]["is_signal"].as<bool>()) s_total = integrals[i][nbin] * totals[i];
+      if(is_signal[i]) s_total = integrals[i][nbin] * totals[i];
       else b_total += integrals[i][nbin] * totals[i];
     }
 
@@ -90,7 +101,7 @@ private:
     for(size_t left_last_bin = 0; left_last_bin < nbin; ++left_last_bin) {
       double s_left, b_left = 0.0;
       for(size_t i = 0; i < ncurve; ++i) {
-        if(categories[i]["is_signal"].as<bool>()) s_left = integrals[i][left_last_bin] * totals[i];
+        if(is_signal[i]) s_left = integrals[i][left_last_bin] * totals[i];
         else b_left += integrals[i][left_last_bin] * totals[i];
       }
       double s_right = s_total - s_left;
@@ -149,15 +160,16 @@ private:
 
 int main(int argc, char *argv[])
 {
-  if(argc < 5) {
+  if(argc < 8) {
     cerr << "usage: " << program_invocation_short_name << " <categorization-yaml>"
-         << " <lower-bound> <upper-bound> <dir-to-root-files> [ <more-dir> ... ]" << endl;
+         << " <lower-bound> <upper-bound> <branch-prefix> <signal-branch-suffix>"
+         << " <signal-category> <dir-to-root-files> [ <more-dir> ... ]" << endl;
     return 1;
   }
   lumi_sqrtS = (dotsplit(basename(argv[1])).first + " 100/fb").c_str();
 
-  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]));
-  for(int i = 4; i < argc; ++i) {
+  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6]);
+  for(int i = 7; i < argc; ++i) {
     ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
     for(const string &name : lsrst.get_full_names()) eviewer.add_filename(name.c_str());
