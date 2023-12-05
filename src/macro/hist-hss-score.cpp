@@ -22,11 +22,11 @@ class Tree2Hist : public CategorizedTreeInput, public HistOutput {
 public:
   Tree2Hist(const char *yamlpath, double lb, double ub,
       const string &branch_prefix, const string &signal_branch_suffix,
-      const string &signal_category)
+      const string &signal_category, double luminosity)
     : CategorizedTreeInput("Events", yamlpath)
     , HistOutput(get_output_ytitle(signal_branch_suffix).c_str(), "number",
         get_output_filename(signal_branch_suffix, lb, ub).c_str())
-    , signal_category_(signal_category)
+    , signal_category_(signal_category), luminosity_(luminosity)
   {
     add_branch((branch_prefix + signal_branch_suffix).c_str());  // 0
     add_branch((branch_prefix + "QCDbb").c_str());               // 1
@@ -50,7 +50,7 @@ public:
     // Compute weight of current event.
     YAML::Node sample;
     get_sample_configuration(&sample);
-    double weight = sample["xs"].as<double>() * 100.0e3 / sample["nevent"].as<double>();
+    double weight = sample["xs"].as<double>() * 1e3 * luminosity_ / sample["nevent"].as<double>();
 
     // Extract Hss and QCD scores.
     double Hss, QCD = 0.0;
@@ -70,6 +70,7 @@ public:
 
 private:
   string signal_category_;
+  double luminosity_;
 
   static string get_output_ytitle(const string &signal_branch_suffix) {
     return signal_branch_suffix + "VSQCD";
@@ -160,16 +161,17 @@ private:
 
 int main(int argc, char *argv[])
 {
-  if(argc < 8) {
+  if(argc < 9) {
     cerr << "usage: " << program_invocation_short_name << " <categorization-yaml>"
          << " <lower-bound> <upper-bound> <branch-prefix> <signal-branch-suffix>"
-         << " <signal-category> <dir-to-root-files> [ <more-dir> ... ]" << endl;
+         << " <signal-category> <luminosity> <dir-to-root-files> [ <more-dir> ... ]"
+         << endl;
     return 1;
   }
-  lumi_sqrtS = (dotsplit(basename(argv[1])).first + " 100/fb").c_str();
+  lumi_sqrtS = (dotsplit(basename(argv[1])).first + " " + argv[7] + "/fb").c_str();
 
-  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6]);
-  for(int i = 7; i < argc; ++i) {
+  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6], stod(argv[7]));
+  for(int i = 8; i < argc; ++i) {
     ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
     for(const string &name : lsrst.get_full_names()) eviewer.add_filename(name.c_str());
