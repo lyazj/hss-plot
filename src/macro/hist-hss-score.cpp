@@ -154,7 +154,7 @@ private:
       }
     }
     // Adjust y-range.
-    set_rangey(0.8, ymax * 1.2);
+    set_rangey(0.0008, ymax * 1.2);
   }
 };
 
