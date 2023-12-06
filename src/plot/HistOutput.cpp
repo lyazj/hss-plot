@@ -212,6 +212,9 @@ bool HistOutput::save() const
   for(const auto &curve : bg) curve->Draw(get_draw_options().c_str());
   for(const auto &curve : sg) curve->Draw(get_draw_options().c_str());
 
+  canvas->SetGrid(grid_);
+  gPad->RedrawAxis();
+  gPad->RedrawAxis("G");
   if(get_ncurve() > 1) {
     TLegend *legend = canvas->BuildLegend(legend_pos_.xl, legend_pos_.yl, legend_pos_.xh, legend_pos_.yh);
     legend->Draw();
@@ -220,7 +223,6 @@ bool HistOutput::save() const
   detail_->apply_cms_style();
   canvas->SetLogx(logx_);
   canvas->SetLogy(logy_);
-  canvas->SetGrid(grid_);
   canvas->SaveAs(filename_);
   return true;
 }
