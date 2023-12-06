@@ -36,7 +36,7 @@ public:
     add_branch((branch_prefix + "QCDothers").c_str());           // 5
     size_t ncategory = get_ncategory();
     for(size_t i = 0; i < ncategory; ++i) {
-      add_curve(get_category(i).c_str());
+      add_curve(get_category(i).c_str(), get_category(i) == signal_category);
     }
     set_boundary(lb, ub);
     bin();

@@ -14,10 +14,11 @@ public:
   const char *get_filename() const { return filename_; }
 
   // Curves in the same plot.
-  size_t add_curve(const char *title);
+  size_t add_curve(const char *title, bool sg = false);
   size_t get_ncurve() const;
   TH1 *get_curve(size_t) const;
   const char *get_curve_title(size_t) const;
+  bool curve_issignal(size_t) const;
   bool fill_curve(size_t, double value, double weight = 1.0) const;
   virtual bool process() override = 0;
 

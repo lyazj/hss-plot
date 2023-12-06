@@ -23,6 +23,7 @@ public:
   size_t nbin;
   vector<unique_ptr<TH1>> curves;
   vector<string> curve_titles;
+  vector<bool> curve_issignal;
   unique_ptr<TCanvas> canvas;
 
   void init_cms_style() const {
@@ -78,11 +79,12 @@ HistOutput::~HistOutput()
   free(xtitle_);
 }
 
-size_t HistOutput::add_curve(const char *title)
+size_t HistOutput::add_curve(const char *title, bool sg)
 {
   size_t i = detail_->data.size();
   detail_->data.emplace_back();
   detail_->curve_titles.emplace_back(title);
+  detail_->curve_issignal.push_back(sg);
   return i;
 }
 
@@ -95,6 +97,12 @@ TH1 *HistOutput::get_curve(size_t i) const
 {
   if(i >= detail_->curves.size()) return nullptr;
   return detail_->curves[i].get();
+}
+
+bool HistOutput::curve_issignal(size_t i) const
+{
+  if(i >= detail_->curve_issignal.size()) return false;
+  return detail_->curve_issignal[i];
 }
 
 const char *HistOutput::get_curve_title(size_t i) const
@@ -169,19 +177,40 @@ void HistOutput::bin()
 
 bool HistOutput::save() const
 {
-  TCanvas *canvas = detail_->canvas.get();
   if(!filename_) return false;
+
+  bool is_first = true;
+  auto get_draw_options = [&is_first]() {
+    string options = "HIST";
+    if(is_first) is_first = false; else options += ",SAME";
+    return options;
+  };
+
+  vector<TH1 *> sg;
+  vector<unique_ptr<TH1>> bg;
+  TCanvas *canvas = detail_->canvas.get();
   canvas->cd();
+
   for(size_t i = 0; i < get_ncurve(); ++i) {
     const_cast<HistOutput *>(this)->bin();
     TH1 *curve = detail_->curves[i].get();
     if(rangex_) curve->GetXaxis()->SetRangeUser(xmin_, xmax_);
     if(rangey_) curve->GetYaxis()->SetRangeUser(ymin_, ymax_);
-    curve->SetLineColor(i + 1);
-    string options = "HIST";
-    if(i) options += ",SAME";
-    curve->Draw(options.c_str());
+    curve->SetLineColor(i + 2);
+    if(detail_->curve_issignal[i]) {  // SG: independent.
+      sg.push_back(curve);
+    } else {  // BG: accumulative.
+      curve->SetFillColor(i + 2);
+      TH1 *clone = (TH1 *)curve->Clone();
+      if(!bg.empty()) clone->Add(bg.back().get());
+      if(rangex_) clone->GetXaxis()->SetRangeUser(xmin_, xmax_);
+      if(rangey_) clone->GetYaxis()->SetRangeUser(ymin_, ymax_);
+      bg.emplace_back(clone);
+    }
   }
+  reverse(bg.begin(), bg.end());  // BG: stacked; SG: step.
+  for(const auto &curve : bg) curve->Draw(get_draw_options().c_str());
+  for(const auto &curve : sg) curve->Draw(get_draw_options().c_str());
 
   if(get_ncurve() > 1) {
     TLegend *legend = canvas->BuildLegend(legend_pos_.xl, legend_pos_.yl, legend_pos_.xh, legend_pos_.yh);
