@@ -57,7 +57,7 @@ public:
 HistOutput::HistOutput(const char *xtitle, const char *ytitle, const char *filename)
   : xtitle_(strdup(xtitle)), ytitle_(strdup(ytitle))
   , filename_(strdup(filename)), legend_pos_{0.65, 0.95, 0.75, 0.9}
-  , logx_(false), logy_(false), rangex_(false), rangey_(false), grid_(false)
+  , logx_(false), logy_(false), rangex_(false), rangey_(false), gridx_(false), gridy_(false)
   , xmin_(0.0), xmax_(0.0), ymin_(0.0), ymax_(0.0)
 {
   detail_ = new Detail;
@@ -212,13 +212,14 @@ bool HistOutput::save() const
   for(const auto &curve : bg) curve->Draw(get_draw_options().c_str());
   for(const auto &curve : sg) curve->Draw(get_draw_options().c_str());
 
-  canvas->SetGrid(grid_);
-  gPad->RedrawAxis();
-  gPad->RedrawAxis("G");
+  TLegend *legend = nullptr;
   if(get_ncurve() > 1) {
-    TLegend *legend = canvas->BuildLegend(legend_pos_.xl, legend_pos_.yl, legend_pos_.xh, legend_pos_.yh);
-    legend->Draw();
+    legend = canvas->BuildLegend(legend_pos_.xl, legend_pos_.yl, legend_pos_.xh, legend_pos_.yh);
   }
+  canvas->SetGrid(gridx_, gridy_);
+  canvas->RedrawAxis();
+  canvas->RedrawAxis("G");
+  if(legend) legend->Draw();
 
   detail_->apply_cms_style();
   canvas->SetLogx(logx_);

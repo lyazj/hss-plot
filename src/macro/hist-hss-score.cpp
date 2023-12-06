@@ -42,7 +42,7 @@ public:
     bin();
     set_logy(true);
     set_legend_pos(0.65, 0.95, 0.75, 0.9);
-    set_grid(true);
+    set_gridy(true);
   }
 
   ~Tree2Hist() { optimize(); post_process(); }
@@ -156,7 +156,7 @@ private:
       }
     }
     // Adjust y-range.
-    set_rangey(0.0008, ymax * 1.2);
+    set_rangey(0.8 * (signal_category_[1] == 'h' ? 0.001 : 1.0), ymax * 1.2);
   }
 };
 
