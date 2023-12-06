@@ -42,6 +42,7 @@ public:
     bin();
     set_logy(true);
     set_legend_pos(0.65, 0.95, 0.75, 0.9);
+    set_grid(true);
   }
 
   ~Tree2Hist() { optimize(); post_process(); }
