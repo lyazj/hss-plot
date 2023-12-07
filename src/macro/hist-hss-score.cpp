@@ -1,6 +1,7 @@
 #include "CMS_lumi.h"
 #include "CategorizedTreeInput.h"
 #include "HistOutput.h"
+#include "MultiStep.h"
 #include <yaml-cpp/yaml.h>
 #include "fs.h"
 #include <sstream>
@@ -18,15 +19,15 @@
 
 using namespace std;
 
-class Tree2Hist : public CategorizedTreeInput, public HistOutput {
+class TaggerHist : public CategorizedTreeInput, public HistOutput, public MultiStep {
 public:
-  Tree2Hist(const char *yamlpath, double lb, double ub,
+  TaggerHist(const char *yamlpath, double lb, double ub,
       const string &branch_prefix, const string &signal_branch_suffix,
-      const string &signal_category, double luminosity)
+      const string &signal_category, double luminosity, double threshold)
     : CategorizedTreeInput("Events", yamlpath)
     , HistOutput(get_output_ytitle(signal_branch_suffix).c_str(), "number",
         get_output_filename(signal_branch_suffix, lb, ub).c_str())
-    , signal_category_(signal_category), luminosity_(luminosity)
+    , signal_category_(signal_category), luminosity_(luminosity), threshold_(threshold)
   {
     add_branch((branch_prefix + signal_branch_suffix).c_str());  // 0
     add_branch((branch_prefix + "QCDbb").c_str());               // 1
@@ -36,7 +37,7 @@ public:
     add_branch((branch_prefix + "QCDothers").c_str());           // 5
     size_t ncategory = get_ncategory();
     for(size_t i = 0; i < ncategory; ++i) {
-      add_curve(get_category(i).c_str(), get_category(i) == signal_category);
+      add_curve(get_category(i).c_str(), category_issignal(i));
     }
     set_boundary(lb, ub);
     bin();
@@ -45,13 +46,11 @@ public:
     set_gridy(true);
   }
 
-  ~Tree2Hist() { optimize(); post_process(); }
+  ~TaggerHist() { /* optimize(); */ post_process(); }
 
   virtual bool process() override {
     // Compute weight of current event.
-    YAML::Node sample;
-    get_sample_configuration(&sample);
-    double weight = sample["xs"].as<double>() * 1e3 * luminosity_ / sample["nevent"].as<double>();
+    double weight = get_sample_weight();
 
     // Extract Hss and QCD scores.
     double Hss, QCD = 0.0;
@@ -66,12 +65,23 @@ public:
 
     // Submit result.
     this->fill_curve(get_icategory(), HssVSQCD, weight);
-    return true;
+    return HssVSQCD >= threshold_;
   }
+
+  double get_sample_weight() const {
+    YAML::Node sample;
+    get_sample_configuration(&sample);
+    return sample["xs"].as<double>() * 1e3 * luminosity_ / sample["nevent"].as<double>();
+  }
+
+  bool category_issignal(const string &category) const { return category == signal_category_; }
+  bool category_issignal(size_t i) const { return category_issignal(get_category(i)); }
+  bool category_issignal() const { return category_issignal(get_category()); }
 
 private:
   string signal_category_;
   double luminosity_;
+  double threshold_;
 
   static string get_output_ytitle(const string &signal_branch_suffix) {
     return signal_branch_suffix + "VSQCD";
@@ -91,7 +101,7 @@ private:
     vector<Double_t *> integrals(ncurve);
     vector<Double_t> totals(ncurve);
     for(size_t i = 0; i < ncurve; ++i) {
-      is_signal[i] = get_category(i) == signal_category_;
+      is_signal[i] = category_issignal(i);
       integrals[i] = get_curve(i)->GetIntegral();
       totals[i] = get_curve(i)->GetSumOfWeights();
       if(is_signal[i]) s_total = integrals[i][nbin] * totals[i];
@@ -160,23 +170,65 @@ private:
   }
 };
 
+class KinBDTHist : public HistOutput, public MultiStep {
+public:
+  KinBDTHist(TaggerHist *tagger, double lb, double ub, double threshold)
+    : HistOutput("kinBDT", "number", get_output_filename(lb, ub).c_str())
+    , tagger_(tagger), threshold_(threshold)
+  {
+    ikinBDT_ = tagger->add_branch("kinBDT");
+    size_t ncategory = tagger->get_ncategory();
+    for(size_t i = 0; i < ncategory; ++i) {
+      add_curve(tagger->get_category(i).c_str(), tagger->category_issignal(i));
+    }
+    set_boundary(lb, ub);
+    bin();
+    set_logy(false);
+    set_legend_pos(0.65, 0.95, 0.75, 0.9);
+    set_gridy(true);
+  }
+
+private:
+  TaggerHist *tagger_;
+  double threshold_;
+  size_t ikinBDT_;
+
+  static string get_output_filename(double lb, double ub) {
+    return "kinBDT_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
+  }
+
+  virtual bool process() override {
+    // Compute weight of current event.
+    double weight = tagger_->get_sample_weight();
+
+    // Extract kinBDT score.
+    double kinBDT = *(float *)tagger_->get_branch_data(ikinBDT_);
+
+    // Submit result.
+    this->fill_curve(tagger_->get_icategory(), kinBDT, weight);
+    return kinBDT >= threshold_;
+  }
+};
+
 int main(int argc, char *argv[])
 {
-  if(argc < 9) {
+  if(argc < 11) {
     cerr << "usage: " << program_invocation_short_name << " <categorization-yaml>"
          << " <lower-bound> <upper-bound> <branch-prefix> <signal-branch-suffix>"
-         << " <signal-category> <luminosity> <dir-to-root-files> [ <more-dir> ... ]"
+         << " <signal-category> <luminosity> <tagger-threshold> <kinbdt-threshold>"
+         << " <dir-to-root-files> [ <more-dir> ... ]"
          << endl;
     return 1;
   }
   lumi_sqrtS = (dotsplit(basename(argv[1])).first + " " + argv[7] + "/fb").c_str();
 
-  Tree2Hist eviewer(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6], stod(argv[7]));
-  for(int i = 8; i < argc; ++i) {
+  TaggerHist tagger_hist(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6], stod(argv[7]), stod(argv[8]));
+  tagger_hist.then(new KinBDTHist(&tagger_hist, stod(argv[2]), stod(argv[3]), stod(argv[9])));
+  for(int i = 10; i < argc; ++i) {
     ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
-    for(const string &name : lsrst.get_full_names()) eviewer.add_filename(name.c_str());
+    for(const string &name : lsrst.get_full_names()) tagger_hist.add_filename(name.c_str());
   }
-  eviewer.loop();
+  tagger_hist.loop();
   return 0;
 }
