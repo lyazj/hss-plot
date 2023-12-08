@@ -90,3 +90,36 @@
       nevent: 2000000
       xs-name: TOP-RunIISummer20UL17MiniAODv2-00039
       xs: 687.1
+
+- name: st
+  samples:
+
+    - name: TOP-RunIISummer20UL18MiniAODv2-00110
+      dataset: ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8
+      nevent: 2000000
+      xs-name: TOP-RunIISummer20UL17MiniAODv2-00155
+      xs: 3.549
+
+    - name: TOP-RunIISummer20UL18MiniAODv2-00265
+      dataset: ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8
+      nevent: 2000000
+      xs-name: TOP-RunIISummer20UL17MiniAODv2-00247
+      xs: 67.93
+
+    - name: TOP-RunIISummer20UL18MiniAODv2-00264
+      dataset: ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8
+      nevent: 2000000
+      xs-name: TOP-RunIISummer20UL17MiniAODv2-00246
+      xs: 113.4
+
+    - name: TOP-RunIISummer20UL18MiniAODv2-00235
+      dataset: ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8
+      nevent: 2000000
+      xs-name: TOP-RunIISummer20UL17MiniAODv2-00217
+      xs: 32.51
+
+    - name: TOP-RunIISummer20UL18MiniAODv2-00234
+      dataset: ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8
+      nevent: 2000000
+      xs-name: TOP-RunIISummer20UL17MiniAODv2-00216
+      xs: 32.45
