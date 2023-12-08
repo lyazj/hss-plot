@@ -210,6 +210,46 @@ private:
   }
 };
 
+class MassHist : public HistOutput, public MultiStep {
+public:
+  MassHist(TaggerHist *tagger, double lb, double ub, double threshold)
+    : HistOutput("Mass", "number", get_output_filename(lb, ub).c_str())
+    , tagger_(tagger), threshold_(threshold)
+  {
+    iMass_ = tagger->add_branch("ak15_regressed_mass");
+    size_t ncategory = tagger->get_ncategory();
+    for(size_t i = 0; i < ncategory; ++i) {
+      add_curve(tagger->get_category(i).c_str(), tagger->category_issignal(i));
+    }
+    set_boundary(lb, ub);
+    bin();
+    set_logy(false);
+    set_legend_pos(0.65, 0.95, 0.75, 0.9);
+    set_gridy(true);
+  }
+
+private:
+  TaggerHist *tagger_;
+  double threshold_;
+  size_t iMass_;
+
+  static string get_output_filename(double lb, double ub) {
+    return "Mass_" + to_string(lb) + "_" + to_string(ub) + ".pdf";
+  }
+
+  virtual bool process() override {
+    // Compute weight of current event.
+    double weight = tagger_->get_sample_weight();
+
+    // Extract Mass score.
+    double Mass = *(float *)tagger_->get_branch_data(iMass_);
+
+    // Submit result.
+    this->fill_curve(tagger_->get_icategory(), Mass, weight);
+    return Mass >= threshold_;
+  }
+};
+
 int main(int argc, char *argv[])
 {
   if(argc < 11) {
@@ -223,7 +263,10 @@ int main(int argc, char *argv[])
   lumi_sqrtS = (dotsplit(basename(argv[1])).first + " " + argv[7] + "/fb").c_str();
 
   TaggerHist tagger_hist(argv[1], stod(argv[2]), stod(argv[3]), argv[4], argv[5], argv[6], stod(argv[7]), stod(argv[8]));
-  tagger_hist.then(new KinBDTHist(&tagger_hist, stod(argv[2]), stod(argv[3]), stod(argv[9])));
+  (&tagger_hist)
+    ->then(new KinBDTHist(&tagger_hist, stod(argv[2]), stod(argv[3]), stod(argv[9])))
+    ->then(new MassHist(&tagger_hist, stod(argv[2]), stod(argv[3]), 0.0))
+    ;
   for(int i = 10; i < argc; ++i) {
     ListDir lsrst(argv[i], ListDir::DT_ALL & ~ListDir::DT_DIR);
     lsrst.sort_by_numbers();
